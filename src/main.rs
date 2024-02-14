@@ -4,15 +4,32 @@ use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
 
+use std::env;
 use std::io::{self, Write};
 
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
     execute!(io::stdout(), Hide)?;
 
-    clear_all()?;
+    let args: Vec<String> = env::args().collect();
+    let mut lines: Vec<String>;
 
-    let mut lines: Vec<String> = Vec::from([String::new()]);
+    println!(
+        "{}",
+        env::current_dir().unwrap().display().to_string() + &args[1]
+    );
+
+    if args.len() > 1 {
+        let file = std::fs::read_to_string(
+            env::current_dir().unwrap().display().to_string() + "/" + &args[1],
+        )?;
+        lines = file.lines().map(|s| s.to_string()).collect();
+    } else {
+        lines = vec!["".to_string()];
+    }
+
+    // clear_all()?;
+
     let mut current_line: usize = 0;
     let mut current_char: usize = 0;
     let mut initial = true;
@@ -24,9 +41,6 @@ fn main() -> io::Result<()> {
             if let Event::Key(key_event) = event {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
-                }
-                if initial {
-                    initial = false;
                 }
                 match key_event.code {
                     KeyCode::Down => {
@@ -70,6 +84,11 @@ fn main() -> io::Result<()> {
                         clear_all()?;
                     }
                     KeyCode::Enter => {
+                        if (initial) {
+                            initial = false;
+                            continue;
+                        }
+
                         changed_line = true;
                         current_line += 1;
                         lines.insert(current_line, String::new());
