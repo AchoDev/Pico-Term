@@ -74,7 +74,7 @@ fn main() -> io::Result<()> {
                         current_line += 1;
                         lines.insert(current_line, String::new());
 
-                        if current_char != 0 && current_char < lines[current_line - 1].len() {
+                        if current_char < lines[current_line - 1].len() {
                             lines[current_line] = lines[current_line - 1]
                                 [current_char..lines[current_line - 1].len()]
                                 .to_string();
