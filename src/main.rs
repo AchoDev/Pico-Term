@@ -1,11 +1,17 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
-use crossterm::event::{read, Event, KeyCode, KeyEventKind};
+use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers, ModifierKeyCode};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
 
 use std::env;
 use std::io::{self, Write};
+
+enum Mode {
+    WriteMode,
+    EditMode,
+    MenuMode,
+}
 
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
@@ -28,11 +34,12 @@ fn main() -> io::Result<()> {
         lines = vec!["".to_string()];
     }
 
-    // clear_all()?;
+    clear_all()?;
 
     let mut current_line: usize = 0;
     let mut current_char: usize = 0;
     let mut initial = true;
+    let mut current_mode = Mode::WriteMode;
 
     execute!(io::stdout(), MoveTo(0, 0))?;
     loop {
@@ -42,6 +49,7 @@ fn main() -> io::Result<()> {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
                 }
+                initial = false;
                 match key_event.code {
                     KeyCode::Down => {
                         if current_line == lines.len() - 1 {
@@ -84,11 +92,6 @@ fn main() -> io::Result<()> {
                         clear_all()?;
                     }
                     KeyCode::Enter => {
-                        if (initial) {
-                            initial = false;
-                            continue;
-                        }
-
                         changed_line = true;
                         current_line += 1;
                         lines.insert(current_line, String::new());
@@ -108,15 +111,34 @@ fn main() -> io::Result<()> {
 
                     KeyCode::Esc => break,
                     KeyCode::Char(c) => {
-                        current_char += 1;
-                        changed_line = true;
-                        if current_char >= lines[current_line].len() {
-                            lines[current_line].push(c);
+                        if key_event.modifiers == KeyModifiers::ALT && c == 'j' {
+                            if matches!(current_mode, Mode::WriteMode) {
+                                current_mode = Mode::EditMode;
+                                clear_all()?;
+                                changed_line = true;
+                            }
+                        }
+                        if matches!(current_mode, Mode::EditMode) {
+                            match c {
+                                'j' => current_line += 1,
+                                'f' => current_line -= 1,
+                                'd' => current_char -= 1,
+                                'k' => current_char += 1,
+                                _ => {}
+                            }
+                            changed_line = true;
                         } else {
-                            lines[current_line] = lines[current_line][0..current_char - 1]
-                                .to_string()
-                                + &c.to_string()
-                                + &lines[current_line][current_char - 1..lines[current_line].len()]
+                            current_char += 1;
+                            changed_line = true;
+                            if current_char >= lines[current_line].len() {
+                                lines[current_line].push(c);
+                            } else {
+                                lines[current_line] = lines[current_line][0..current_char - 1]
+                                    .to_string()
+                                    + &c.to_string()
+                                    + &lines[current_line]
+                                        [current_char - 1..lines[current_line].len()]
+                            }
                         }
                     }
                     KeyCode::Backspace => {
@@ -162,7 +184,7 @@ fn main() -> io::Result<()> {
 
         // println!("{} {}", current_char, lines[current_line].len());
 
-        let char = match current_char == lines[current_line].len() {
+        let mut char = match current_char == lines[current_line].len() {
             true => ' '.on_white(),
             false => lines[current_line]
                 .chars()
@@ -170,6 +192,10 @@ fn main() -> io::Result<()> {
                 .unwrap()
                 .on_white(),
         };
+
+        if matches!(current_mode, Mode::EditMode) {
+            char = char.white().on_blue();
+        }
 
         println!("{}", "Pico - AchoDev".dark_blue());
         println!("{}", "----| test_file.txt".dark_grey());
@@ -210,10 +236,15 @@ fn main() -> io::Result<()> {
             println!("");
         }
         println!("{}", "----|".dark_grey());
-        print!("Line: {} Char: {}", current_line + 1, current_char);
-        println!("\n\n{}", "Press ALT to enter Edit Mode".blue());
-        println!("{}", "Press F1 to enter Menu Mode".blue());
-        println!("{}", "Press ESC to exit Pico".blue());
+
+        if matches!(current_mode, Mode::EditMode) {
+            println!("\n{}", "EDIT MODE ; Exit with Q".on_yellow().white())
+        } else {
+            print!("Line: {} Char: {}", current_line + 1, current_char);
+            println!("\n\n{}", "Press ALT+J to enter Edit Mode".blue());
+            println!("{}", "Press F1 to enter Menu Mode".blue());
+            println!("{}", "Press ESC to exit Pico".blue());
+        }
 
         // println!("Debug info");
         // println!("{:?}", lines);
