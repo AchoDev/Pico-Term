@@ -1,5 +1,5 @@
 [package]
-name = "Pico-Term"
+name = "pico-term"
 version = "0.1.0"
 edition = "2021"
 

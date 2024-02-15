@@ -1,16 +1,17 @@
-use crossterm::cursor::{Hide, MoveRight, MoveTo, Show};
+use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
 
 use std::env;
+use std::fs::read_to_string;
 use std::io::{self, Write};
 
 enum Mode {
     WriteMode,
     EditMode,
-    MenuMode,
+    // MenuMode,
 }
 
 fn move_down(
@@ -112,6 +113,8 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let mut lines: Vec<String>;
     let file_name: &str;
+    let file_path: String;
+    let mut info_text = String::new();
 
     // println!(
     //     "{}",
@@ -119,14 +122,14 @@ fn main() -> io::Result<()> {
     // );
 
     if args.len() > 1 {
-        let file = std::fs::read_to_string(
-            env::current_dir().unwrap().display().to_string() + "/" + &args[1],
-        )?;
+        file_path = env::current_dir().unwrap().display().to_string() + "/" + &args[1];
+        let file = read_to_string(&file_path)?;
         lines = file.lines().map(|s| s.to_string()).collect();
         file_name = &args[1];
     } else {
         lines = vec!["".to_string()];
         file_name = "new_file.txt";
+        file_path = env::current_dir().unwrap().display().to_string() + "/new_file.txt";
     }
 
     clear_all()?;
@@ -149,18 +152,22 @@ fn main() -> io::Result<()> {
                 // initial = false;
                 match key_event.code {
                     KeyCode::Down => {
+                        info_text = String::new();
                         move_down(&mut current_line, &mut current_char, &lines)?;
                         changed_line = true;
                     }
                     KeyCode::Up => {
+                        info_text = String::new();
                         move_up(&mut current_line, &mut current_char, &lines)?;
                         changed_line = true;
                     }
                     KeyCode::Right => {
+                        info_text = String::new();
                         move_right(&mut current_char, &current_line, &lines, false)?;
                         changed_line = true;
                     }
                     KeyCode::Left => {
+                        info_text = String::new();
                         move_left(&mut current_char, &current_line, &mut lines, false)?;
                         changed_line = true;
                     }
@@ -180,11 +187,11 @@ fn main() -> io::Result<()> {
 
                         current_char = 0;
                         clear_all()?;
-                        // if initial {
-                        //     lines.remove(0);
-                        //     current_line -= 1;
-                        //     initial = false;
-                        // }
+                        if initial {
+                            lines.remove(0);
+                            current_line -= 1;
+                            initial = false;
+                        }
                     }
 
                     KeyCode::F(2) => {
@@ -210,7 +217,11 @@ fn main() -> io::Result<()> {
                         clear_all()?;
                     }
 
-                    KeyCode::Esc => break,
+                    KeyCode::Esc => {
+                        clear_all()?;
+                        execute!(io::stdout(), MoveTo(0, 0))?;
+                        break;
+                    }
                     KeyCode::Char(c) => {
                         if key_event.modifiers == KeyModifiers::ALT && c == 'j' {
                             if matches!(current_mode, Mode::WriteMode) {
@@ -220,6 +231,11 @@ fn main() -> io::Result<()> {
                                 move_left(&mut current_char, &current_line, &mut lines, true)?;
                             }
                             changed_line = true;
+                        } else if key_event.modifiers == KeyModifiers::CONTROL && c == 's' {
+                            info_text = "File saved as '".to_owned() + file_name + "'";
+                            changed_line = true;
+                            clear_all()?;
+                            std::fs::write(&file_path, lines.join("\n"))?;
                         } else if matches!(current_mode, Mode::EditMode) {
                             match c {
                                 'i' => match key_event.modifiers {
@@ -287,6 +303,8 @@ fn main() -> io::Result<()> {
                             }
                             changed_line = true;
                         } else {
+                            info_text = String::new();
+                            clear_all()?;
                             current_char += 1;
                             changed_line = true;
                             if current_char >= lines[current_line].len() {
@@ -302,6 +320,7 @@ fn main() -> io::Result<()> {
                     }
                     KeyCode::Backspace => {
                         if current_char == 0 {
+                            info_text = String::new();
                             if current_line == 0 {
                                 continue;
                             }
@@ -356,9 +375,10 @@ fn main() -> io::Result<()> {
 
         if matches!(current_mode, Mode::EditMode) {
             char = char.white().on_dark_green();
-        } else if matches!(current_mode, Mode::MenuMode) {
-            char = char.white()
         }
+        // else if matches!(current_mode, Mode::MenuMode) {
+        //     char = char.white()
+        // }
 
         println!("{}", "Pico - AchoDev".dark_blue());
         print!("{}", "----| ".dark_grey());
@@ -416,7 +436,7 @@ fn main() -> io::Result<()> {
         }
         println!("{}", "----|".dark_grey());
         println!("\nLine: {} Char: {}", current_line + 1, current_char);
-
+        print!("{}", info_text.clone().on_white());
         if matches!(current_mode, Mode::EditMode) {
             println!("\n{}", "EDIT MODE".on_dark_green());
             println!("{}", "Switch to write mode        Q".dark_green());
@@ -424,10 +444,6 @@ fn main() -> io::Result<()> {
             println!("{}", "Move to next word           ALT + J / K".dark_green());
             println!("{}", "Move line up/down           ALT + I / K".dark_green());
             println!("{}", "Move to start/end of line   U / O".dark_green());
-        } else if matches!(current_mode, Mode::MenuMode) {
-            println!("\n{}", "MENU MODE".on_cyan());
-            println!("\n{}", "S to save".red());
-            println!("{}", "F2 to exit Menu Mode".red());
         } else {
             println!("\n{}", "WRITE MODE".on_blue());
             println!("{}", "Switch to edit mode         ALT + J".blue());
