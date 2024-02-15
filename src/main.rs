@@ -1,4 +1,4 @@
-use crossterm::cursor::{Hide, MoveTo, Show};
+use crossterm::cursor::{Hide, MoveRight, MoveTo, Show};
 use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
@@ -13,12 +13,71 @@ enum Mode {
     MenuMode,
 }
 
+fn move_down(
+    current_line: &mut usize,
+    current_char: &mut usize,
+    lines: &Vec<String>,
+) -> io::Result<()> {
+    if *current_line == lines.len() - 1 {
+        return Ok(());
+    }
+
+    *current_line += 1;
+
+    if *current_char >= lines[*current_line].len() {
+        *current_char = lines[*current_line].len()
+    }
+    clear_all()?;
+    Ok(())
+}
+
+fn move_up(
+    current_line: &mut usize,
+    current_char: &mut usize,
+    lines: &Vec<String>,
+) -> io::Result<()> {
+    if *current_line == 0 {
+        return Ok(());
+    }
+
+    *current_line -= 1;
+
+    if *current_char >= lines[*current_line].len() {
+        *current_char = lines[*current_line].len()
+    }
+    clear_all()?;
+    Ok(())
+}
+
+fn move_right(
+    current_char: &mut usize,
+    current_line: &usize,
+    lines: &Vec<String>,
+    whole_word: bool,
+) -> io::Result<()> {
+    if *current_char < lines[*current_line].len() {
+        *current_char += 1;
+    }
+    clear_all()?;
+    Ok(())
+}
+
+fn move_left(current_char: &mut usize) -> io::Result<()> {
+    if *current_char == 0 {
+        return Ok(());
+    }
+    *current_char -= 1;
+    clear_all()?;
+    Ok(())
+}
+
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
     execute!(io::stdout(), Hide)?;
 
     let args: Vec<String> = env::args().collect();
     let mut lines: Vec<String>;
+    let file_name: &str;
 
     println!(
         "{}",
@@ -30,8 +89,10 @@ fn main() -> io::Result<()> {
             env::current_dir().unwrap().display().to_string() + "/" + &args[1],
         )?;
         lines = file.lines().map(|s| s.to_string()).collect();
+        file_name = &args[1];
     } else {
         lines = vec!["".to_string()];
+        file_name = "new_file.txt";
     }
 
     clear_all()?;
@@ -51,47 +112,22 @@ fn main() -> io::Result<()> {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
                 }
-                initial = false;
                 match key_event.code {
                     KeyCode::Down => {
-                        if current_line == lines.len() - 1 {
-                            continue;
-                        }
-
-                        current_line += 1;
+                        move_down(&mut current_line, &mut current_char, &lines)?;
                         changed_line = true;
-
-                        if current_char >= lines[current_line].len() {
-                            current_char = lines[current_line].len()
-                        }
-                        clear_all()?;
                     }
                     KeyCode::Up => {
-                        if current_line == 0 {
-                            continue;
-                        }
-
-                        current_line -= 1;
+                        move_up(&mut current_line, &mut current_char, &lines)?;
                         changed_line = true;
-
-                        if current_char >= lines[current_line].len() {
-                            current_char = lines[current_line].len()
-                        }
-                        clear_all()?;
                     }
                     KeyCode::Right => {
-                        if current_char < lines[current_line].len() {
-                            current_char += 1;
-                            changed_line = true;
-                        }
+                        move_right(&mut current_char, &current_line, &lines, false)?;
+                        changed_line = true;
                     }
                     KeyCode::Left => {
-                        if current_char == 0 {
-                            continue;
-                        }
-                        current_char -= 1;
+                        move_left(&mut current_char)?;
                         changed_line = true;
-                        clear_all()?;
                     }
                     KeyCode::Enter => {
                         changed_line = true;
@@ -109,6 +145,19 @@ fn main() -> io::Result<()> {
 
                         current_char = 0;
                         clear_all()?;
+                        if initial {
+                            lines.remove(0);
+                            initial = false;
+                        }
+                    }
+
+                    KeyCode::F(2) => {
+                        current_mode = match current_mode {
+                            Mode::MenuMode => Mode::WriteMode,
+                            _ => Mode::MenuMode,
+                        };
+                        changed_line = true;
+                        clear_all()?;
                     }
 
                     KeyCode::Esc => break,
@@ -117,15 +166,28 @@ fn main() -> io::Result<()> {
                             if matches!(current_mode, Mode::WriteMode) {
                                 current_mode = Mode::EditMode;
                                 clear_all()?;
-                                changed_line = true;
                             }
-                        }
-                        if matches!(current_mode, Mode::EditMode) {
+                            changed_line = true;
+                        } else if matches!(current_mode, Mode::EditMode) {
                             match c {
-                                'j' => current_line += 1,
-                                'f' => current_line -= 1,
-                                'd' => current_char -= 1,
-                                'k' => current_char += 1,
+                                'i' => move_up(&mut current_line, &mut current_char, &lines)?,
+                                'k' => move_down(&mut current_line, &mut current_char, &lines)?,
+                                'j' => move_left(&mut current_char)?,
+                                'l' => move_right(&mut current_char, &current_line, &lines, false)?,
+
+                                'u' => {
+                                    current_char = 0;
+                                    clear_all()?;
+                                }
+                                'o' => {
+                                    current_char = lines[current_line].len();
+                                    clear_all()?;
+                                }
+
+                                'q' => {
+                                    current_mode = Mode::WriteMode;
+                                    clear_all()?;
+                                }
                                 _ => {}
                             }
                             changed_line = true;
@@ -197,10 +259,13 @@ fn main() -> io::Result<()> {
 
         if matches!(current_mode, Mode::EditMode) {
             char = char.white().on_blue();
+        } else if matches!(current_mode, Mode::MenuMode) {
+            char = char.white()
         }
 
         println!("{}", "Pico - AchoDev".dark_blue());
-        println!("{}", "----| test_file.txt".dark_grey());
+        print!("{}", "----| ".dark_grey());
+        println!("{}", file_name.dark_grey());
 
         for i in 0..line_count {
             let line;
@@ -256,6 +321,10 @@ fn main() -> io::Result<()> {
 
         if matches!(current_mode, Mode::EditMode) {
             println!("\n{}", "EDIT MODE ; Exit with Q".on_yellow().white())
+        } else if matches!(current_mode, Mode::MenuMode) {
+            println!("\n{}", "MENU MODE".on_cyan());
+            println!("\n{}", "S to save".red());
+            println!("{}", "F2 to exit Menu Mode".red());
         } else {
             print!("Line: {} Char: {}", current_line + 1, current_char);
             println!("\n\n{}", "Press ALT+J to enter Edit Mode".blue());
