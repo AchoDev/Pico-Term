@@ -55,18 +55,52 @@ fn move_right(
     lines: &Vec<String>,
     whole_word: bool,
 ) -> io::Result<()> {
-    if *current_char < lines[*current_line].len() {
-        *current_char += 1;
+    if *current_char >= lines[*current_line].len() {
+        return Ok(());
     }
+
+    *current_char += 1;
+
+    if whole_word {
+        while *current_char < lines[*current_line].len()
+            && lines[*current_line].chars().nth(*current_char).unwrap() == ' '
+        {
+            *current_char += 1;
+        }
+        while *current_char < lines[*current_line].len()
+            && lines[*current_line].chars().nth(*current_char).unwrap() != ' '
+        {
+            *current_char += 1;
+        }
+    }
+
     clear_all()?;
     Ok(())
 }
 
-fn move_left(current_char: &mut usize) -> io::Result<()> {
+fn move_left(
+    current_char: &mut usize,
+    current_line: &usize,
+    lines: &mut Vec<String>,
+    whole_word: bool,
+) -> io::Result<()> {
     if *current_char == 0 {
         return Ok(());
     }
+
     *current_char -= 1;
+
+    if whole_word {
+        while *current_char > 0 && lines[*current_line].chars().nth(*current_char).unwrap() == ' ' {
+            *current_char -= 1;
+        }
+        while *current_char > 0
+            && lines[*current_line].chars().nth(*current_char - 1).unwrap() != ' '
+        {
+            *current_char -= 1;
+        }
+    }
+
     clear_all()?;
     Ok(())
 }
@@ -79,10 +113,10 @@ fn main() -> io::Result<()> {
     let mut lines: Vec<String>;
     let file_name: &str;
 
-    println!(
-        "{}",
-        env::current_dir().unwrap().display().to_string() + &args[1]
-    );
+    // println!(
+    //     "{}",
+    //     env::current_dir().unwrap().display().to_string() + &args[1]
+    // );
 
     if args.len() > 1 {
         let file = std::fs::read_to_string(
@@ -112,6 +146,7 @@ fn main() -> io::Result<()> {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
                 }
+                // initial = false;
                 match key_event.code {
                     KeyCode::Down => {
                         move_down(&mut current_line, &mut current_char, &lines)?;
@@ -126,7 +161,7 @@ fn main() -> io::Result<()> {
                         changed_line = true;
                     }
                     KeyCode::Left => {
-                        move_left(&mut current_char)?;
+                        move_left(&mut current_char, &current_line, &mut lines, false)?;
                         changed_line = true;
                     }
                     KeyCode::Enter => {
@@ -145,18 +180,33 @@ fn main() -> io::Result<()> {
 
                         current_char = 0;
                         clear_all()?;
-                        if initial {
-                            lines.remove(0);
-                            initial = false;
-                        }
+                        // if initial {
+                        //     lines.remove(0);
+                        //     current_line -= 1;
+                        //     initial = false;
+                        // }
                     }
 
                     KeyCode::F(2) => {
-                        current_mode = match current_mode {
-                            Mode::MenuMode => Mode::WriteMode,
-                            _ => Mode::MenuMode,
-                        };
+                        // current_mode = match current_mode {
+                        //     // Mode::MenuMode => Mode::WriteMode,
+                        //     _ => Mode::MenuMode,
+                        // };
+                        // changed_line = true;
+                        // clear_all()?;
+                    }
+
+                    KeyCode::Tab => {
+                        current_char += 1;
                         changed_line = true;
+                        if current_char >= lines[current_line].len() {
+                            lines[current_line].push('\t');
+                        } else {
+                            lines[current_line] = lines[current_line][0..current_char - 1]
+                                .to_string()
+                                + "\t"
+                                + &lines[current_line][current_char - 1..lines[current_line].len()]
+                        }
                         clear_all()?;
                     }
 
@@ -166,14 +216,59 @@ fn main() -> io::Result<()> {
                             if matches!(current_mode, Mode::WriteMode) {
                                 current_mode = Mode::EditMode;
                                 clear_all()?;
+                            } else {
+                                move_left(&mut current_char, &current_line, &mut lines, true)?;
                             }
                             changed_line = true;
                         } else if matches!(current_mode, Mode::EditMode) {
                             match c {
-                                'i' => move_up(&mut current_line, &mut current_char, &lines)?,
-                                'k' => move_down(&mut current_line, &mut current_char, &lines)?,
-                                'j' => move_left(&mut current_char)?,
-                                'l' => move_right(&mut current_char, &current_line, &lines, false)?,
+                                'i' => match key_event.modifiers {
+                                    KeyModifiers::ALT => {
+                                        if current_line > 0 {
+                                            let cursor_line = lines[current_line].clone();
+                                            let next_line = lines[current_line - 1].clone();
+
+                                            lines[current_line] = next_line;
+                                            lines[current_line - 1] = cursor_line;
+                                            current_line -= 1;
+
+                                            clear_all()?;
+                                        }
+                                    }
+                                    _ => move_up(&mut current_line, &mut current_char, &lines)?,
+                                },
+                                'k' => match key_event.modifiers {
+                                    KeyModifiers::ALT => {
+                                        if current_line < lines.len() - 1 {
+                                            let cursor_line = lines[current_line].clone();
+                                            let next_line = lines[current_line + 1].clone();
+
+                                            lines[current_line] = next_line;
+                                            lines[current_line + 1] = cursor_line;
+                                            current_line += 1;
+                                            clear_all()?;
+                                        }
+                                    }
+
+                                    _ => move_down(&mut current_line, &mut current_char, &lines)?,
+                                },
+                                'l' => {
+                                    let whole_word: bool = match key_event.modifiers {
+                                        KeyModifiers::ALT => true,
+                                        _ => false,
+                                    };
+
+                                    move_right(
+                                        &mut current_char,
+                                        &current_line,
+                                        &lines,
+                                        whole_word,
+                                    )?;
+                                }
+
+                                'j' => {
+                                    move_left(&mut current_char, &current_line, &mut lines, false)?
+                                }
 
                                 'u' => {
                                     current_char = 0;
@@ -242,9 +337,11 @@ fn main() -> io::Result<()> {
 
         execute!(io::stdout(), MoveTo(0, 0))?;
         clear_screen()?;
-        if !changed_line {
+        if !changed_line && !initial {
             continue;
         }
+
+        initial = false;
 
         // println!("{} {}", current_char, lines[current_line].len());
 
@@ -258,7 +355,7 @@ fn main() -> io::Result<()> {
         };
 
         if matches!(current_mode, Mode::EditMode) {
-            char = char.white().on_blue();
+            char = char.white().on_dark_green();
         } else if matches!(current_mode, Mode::MenuMode) {
             char = char.white()
         }
@@ -318,18 +415,24 @@ fn main() -> io::Result<()> {
             println!("");
         }
         println!("{}", "----|".dark_grey());
+        println!("\nLine: {} Char: {}", current_line + 1, current_char);
 
         if matches!(current_mode, Mode::EditMode) {
-            println!("\n{}", "EDIT MODE ; Exit with Q".on_yellow().white())
+            println!("\n{}", "EDIT MODE".on_dark_green());
+            println!("{}", "Switch to write mode        Q".dark_green());
+            println!("{}", "Move cursor                 I J K L".dark_green());
+            println!("{}", "Move to next word           ALT + J / K".dark_green());
+            println!("{}", "Move line up/down           ALT + I / K".dark_green());
+            println!("{}", "Move to start/end of line   U / O".dark_green());
         } else if matches!(current_mode, Mode::MenuMode) {
             println!("\n{}", "MENU MODE".on_cyan());
             println!("\n{}", "S to save".red());
             println!("{}", "F2 to exit Menu Mode".red());
         } else {
-            print!("Line: {} Char: {}", current_line + 1, current_char);
-            println!("\n\n{}", "Press ALT+J to enter Edit Mode".blue());
-            println!("{}", "Press F1 to enter Menu Mode".blue());
-            println!("{}", "Press ESC to exit Pico".blue());
+            println!("\n{}", "WRITE MODE".on_blue());
+            println!("{}", "Switch to edit mode         ALT + J".blue());
+            // println!("{}", "Press F1 to enter Menu Mode".blue());
+            println!("{}", "Exit Pico                   ESC".blue());
         }
 
         // println!("Debug info");
