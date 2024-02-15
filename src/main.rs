@@ -1,5 +1,5 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
-use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers, ModifierKeyCode};
+use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
@@ -40,6 +40,8 @@ fn main() -> io::Result<()> {
     let mut current_char: usize = 0;
     let mut initial = true;
     let mut current_mode = Mode::WriteMode;
+
+    let line_count = 15;
 
     execute!(io::stdout(), MoveTo(0, 0))?;
     loop {
@@ -200,7 +202,16 @@ fn main() -> io::Result<()> {
         println!("{}", "Pico - AchoDev".dark_blue());
         println!("{}", "----| test_file.txt".dark_grey());
 
-        for (i, line) in lines.iter().enumerate() {
+        for i in 0..line_count {
+            let line;
+            let written_line;
+            if i < lines.len() {
+                line = lines[i].clone();
+                written_line = true;
+            } else {
+                line = String::new();
+                written_line = false;
+            }
             let start: &str;
             let mut end: &str = "";
 
@@ -213,13 +224,19 @@ fn main() -> io::Result<()> {
                 start = &line
             }
 
-            print!("{}", (i + 1).to_string().dark_grey());
+            if written_line {
+                print!("{}", (i + 1).to_string().dark_grey());
+            } else {
+                print!("    ");
+            }
             let mut spacer_length: i16 = 3;
             spacer_length -= (i + 1).to_string().len() as i16;
 
             while spacer_length >= 0 {
-                print!(" ");
                 spacer_length -= 1;
+                if written_line {
+                    print!(" ");
+                }
             }
 
             print!("{}", "| ".dark_grey());
