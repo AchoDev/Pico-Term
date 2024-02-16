@@ -4,7 +4,7 @@ Small mode-based terminal based text editor
 
 ## How to run
 
-Install `pico.exe` form this repo and run it
+Install `pico.exe` from [here](https://1drv.ms/u/s!AovQFIBO4x5Ziqo7r2KALTBCmNm4Rg?e=Hhihpk)
 
 ## Controls
 
