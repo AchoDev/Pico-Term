@@ -2,7 +2,7 @@ use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, Clear, ClearType};
 
 use std::env;
 use std::fs::read_to_string;
@@ -138,13 +138,18 @@ fn main() -> io::Result<()> {
     let mut current_char: usize = 0;
     let mut initial = true;
     let mut current_mode = Mode::WriteMode;
-
-    let line_count = 15;
+    let mut term_size = size().unwrap();
 
     execute!(io::stdout(), MoveTo(0, 0))?;
     loop {
         let mut changed_line = false;
         if let Ok(event) = read() {
+            if let Event::Resize(width, height) = event {
+                term_size.0 = width;
+                term_size.1 = height;
+                changed_line = true;
+                clear_all()?;
+            }
             if let Event::Key(key_event) = event {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
@@ -384,11 +389,11 @@ fn main() -> io::Result<()> {
         print!("{}", "----| ".dark_grey());
         println!("{}", file_name.dark_grey());
 
-        for i in 0..line_count {
+        for i in 0..term_size.1 - 9 {
             let line;
             let written_line;
-            if i < lines.len() {
-                line = lines[i].clone();
+            if i < lines.len() as u16 {
+                line = lines[i as usize].clone();
                 written_line = true;
             } else {
                 line = String::new();
@@ -397,7 +402,7 @@ fn main() -> io::Result<()> {
             let start: &str;
             let mut end: &str = "";
 
-            if current_line == i {
+            if current_line == i as usize {
                 start = &line[0..current_char];
                 if current_char < line.len() {
                     end = &line[current_char + 1..line.len()];
@@ -424,7 +429,7 @@ fn main() -> io::Result<()> {
             print!("{}", "| ".dark_grey());
             print!("{}", start);
 
-            if current_line == i {
+            if current_line == i as usize {
                 print!("{}", char);
             }
 
@@ -439,16 +444,17 @@ fn main() -> io::Result<()> {
         print!("{}", info_text.clone().on_white());
         if matches!(current_mode, Mode::EditMode) {
             println!("\n{}", "EDIT MODE".on_dark_green());
-            println!("{}", "Switch to write mode        Q".dark_green());
-            println!("{}", "Move cursor                 I J K L".dark_green());
-            println!("{}", "Move to next word           ALT + J / K".dark_green());
-            println!("{}", "Move line up/down           ALT + I / K".dark_green());
-            println!("{}", "Move to start/end of line   U / O".dark_green());
+            print!("{}", "Switch to write mode: Q".dark_green());
+            print!("{}", "Move cursor: I J K L".dark_green());
+            print!("{}", "Move to next word: ALT + J / K".dark_green());
+            print!("{}", "Move line up/down: ALT + I / K".dark_green());
+            print!("{}", "Move to start/end of line: U / O".dark_green());
         } else {
             println!("\n{}", "WRITE MODE".on_blue());
-            println!("{}", "Switch to edit mode         ALT + J".blue());
+            print!("{}", "Switch to edit mode: ALT + J ".blue());
+            print!("{}", "|".dark_blue());
             // println!("{}", "Press F1 to enter Menu Mode".blue());
-            println!("{}", "Exit Pico                   ESC".blue());
+            print!("{}", " Exit Pico: ESC".blue());
         }
 
         // println!("Debug info");
