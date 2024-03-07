@@ -1,4 +1,4 @@
-use crossterm::cursor::{Hide, MoveTo, Show};
+use crossterm::cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show};
 use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
@@ -8,10 +8,14 @@ use std::env;
 use std::fs::read_to_string;
 use std::io::{self, Write};
 
+mod menu;
+
+use menu::draw_menu;
+
 enum Mode {
     WriteMode,
     EditMode,
-    // MenuMode,
+    MenuMode,
 }
 
 fn move_down(
@@ -136,6 +140,12 @@ fn main() -> io::Result<()> {
 
     let mut current_line: usize = 0;
     let mut current_char: usize = 0;
+
+    // menu
+    let mut menu_option: u16 = 0;
+    let mut menu_item: u16 = 0;
+    let mut menu_size: u16 = 0;
+
     let mut initial = true;
     let mut current_mode = Mode::WriteMode;
     let mut term_size = size().unwrap();
@@ -158,22 +168,62 @@ fn main() -> io::Result<()> {
                 match key_event.code {
                     KeyCode::Down => {
                         info_text = String::new();
-                        move_down(&mut current_line, &mut current_char, &lines)?;
+
+                        match current_mode {
+                            Mode::MenuMode => {
+                                if menu_item < menu_size {
+                                    menu_item += 1
+                                }
+                            }
+                            _ => move_down(&mut current_line, &mut current_char, &lines)?,
+                        }
+
                         changed_line = true;
                     }
                     KeyCode::Up => {
                         info_text = String::new();
-                        move_up(&mut current_line, &mut current_char, &lines)?;
+
+                        match current_mode {
+                            Mode::MenuMode => {
+                                if menu_item > 0 {
+                                    menu_item -= 1
+                                }
+                            }
+                            _ => move_up(&mut current_line, &mut current_char, &lines)?,
+                        }
+
                         changed_line = true;
                     }
                     KeyCode::Right => {
                         info_text = String::new();
-                        move_right(&mut current_char, &current_line, &lines, false)?;
+
+                        match current_mode {
+                            Mode::MenuMode => {
+                                if menu_option < 2 {
+                                    menu_option += 1;
+                                    menu_item = 0;
+                                    clear_all()?;
+                                }
+                            }
+                            _ => move_right(&mut current_char, &current_line, &lines, false)?,
+                        }
+
                         changed_line = true;
                     }
                     KeyCode::Left => {
                         info_text = String::new();
-                        move_left(&mut current_char, &current_line, &mut lines, false)?;
+
+                        match current_mode {
+                            Mode::MenuMode => {
+                                if menu_option > 0 {
+                                    menu_option -= 1;
+                                    menu_item = 0;
+                                    clear_all()?;
+                                }
+                            }
+                            _ => move_left(&mut current_char, &current_line, &mut lines, false)?,
+                        }
+
                         changed_line = true;
                     }
                     KeyCode::Enter => {
@@ -200,12 +250,12 @@ fn main() -> io::Result<()> {
                     }
 
                     KeyCode::F(2) => {
-                        // current_mode = match current_mode {
-                        //     // Mode::MenuMode => Mode::WriteMode,
-                        //     _ => Mode::MenuMode,
-                        // };
-                        // changed_line = true;
-                        // clear_all()?;
+                        current_mode = match current_mode {
+                            Mode::MenuMode => Mode::WriteMode,
+                            _ => Mode::MenuMode,
+                        };
+                        changed_line = true;
+                        clear_all()?;
                     }
 
                     KeyCode::Tab => {
@@ -445,10 +495,10 @@ fn main() -> io::Result<()> {
         if matches!(current_mode, Mode::EditMode) {
             println!("\n{}", "EDIT MODE".on_dark_green());
             print!("{}", "Switch to write mode: Q".dark_green());
-            print!("{}", "Move cursor: I J K L".dark_green());
-            print!("{}", "Move to next word: ALT + J / K".dark_green());
-            print!("{}", "Move line up/down: ALT + I / K".dark_green());
-            print!("{}", "Move to start/end of line: U / O".dark_green());
+            // print!("{}", "Move cursor: I J K L".dark_green());
+            // print!("{}", "Move to next word: ALT + J / K".dark_green());
+            // print!("{}", "Move line up/down: ALT + I / K".dark_green());
+            // print!("{}", "Move to start/end of line: U / O".dark_green());
         } else {
             println!("\n{}", "WRITE MODE".on_blue());
             print!("{}", "Switch to edit mode: ALT + J ".blue());
@@ -459,6 +509,15 @@ fn main() -> io::Result<()> {
 
         // println!("Debug info");
         // println!("{:?}", lines);
+
+        if matches!(current_mode, Mode::MenuMode) {
+            execute!(io::stdout(), SavePosition)?;
+
+            execute!(io::stdout(), MoveTo(0, 0))?;
+            menu_size = draw_menu(&menu_option, &menu_item)?;
+
+            execute!(io::stdout(), RestorePosition)?;
+        }
 
         io::stdout().flush()?;
     }
