@@ -2,9 +2,29 @@ use std::io;
 
 use crossterm::{cursor::MoveTo, execute, style::Stylize};
 
-struct DrawResult {
-    selected_index: u16,
-    selected_action: String,
+pub struct Menu<'a> {
+    menu_item: u16,
+    menu_option: u16,
+    titles: [&'a str, 4],
+}
+
+impl<'a> Menu<'a> {
+    pub fn new() -> Self {
+        Self {
+            menu_item: 0,
+            menu_option: 0,
+            titles: ["File", "Color", "Settings"],
+            [
+        vec!["New file", "Open file", "Save", "Save as"],
+        vec!["Theme1", "Theme2", "Theme3"],
+        vec!["Save on unfocus", "Something"],
+    ];
+        };
+    }
+
+    pub fn move_right() {
+
+    }
 }
 
 pub fn draw_menu(current_selected: &u16, current_item: &u16) -> io::Result<DrawResult> {
@@ -49,7 +69,7 @@ pub fn draw_menu(current_selected: &u16, current_item: &u16) -> io::Result<DrawR
     execute!(io::stdout(), MoveTo(start_pos as u16, 1))?;
 
     let mut result = 0;
-    let mut selected_action;
+    let mut selected_action = "";
 
     let mut i = 0;
     for text in &menu[*current_selected as usize] {
@@ -79,6 +99,6 @@ pub fn draw_menu(current_selected: &u16, current_item: &u16) -> io::Result<DrawR
 
     return Ok(DrawResult {
         selected_index: result - 1,
-        selected_action: selected_action,
+        selected_action: selected_action.to_string(),
     });
 }

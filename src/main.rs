@@ -514,7 +514,9 @@ fn main() -> io::Result<()> {
             execute!(io::stdout(), SavePosition)?;
 
             execute!(io::stdout(), MoveTo(0, 0))?;
-            menu_size = draw_menu(&menu_option, &menu_item)?;
+            let menu_result = draw_menu(&menu_option, &menu_item)?;
+
+            menu_size = menu_result.
 
             execute!(io::stdout(), RestorePosition)?;
         }
