@@ -3,102 +3,114 @@ use std::io;
 use crossterm::{cursor::MoveTo, execute, style::Stylize};
 
 pub struct Menu<'a> {
-    menu_item: u16,
-    menu_option: u16,
-    titles: [&'a str, 4],
+    menu_item: usize,
+    menu_option: usize,
+    titles: [&'a str; 3],
+    items: [Vec<&'a str>; 3],
 }
 
 impl<'a> Menu<'a> {
     pub fn new() -> Self {
-        Self {
+        return Self {
             menu_item: 0,
             menu_option: 0,
             titles: ["File", "Color", "Settings"],
-            [
-        vec!["New file", "Open file", "Save", "Save as"],
-        vec!["Theme1", "Theme2", "Theme3"],
-        vec!["Save on unfocus", "Something"],
-    ];
+            items: [
+                vec!["New file", "Open file", "Save", "Save as"],
+                vec!["Theme1", "Theme2", "Theme3"],
+                vec!["Save on unfocus", "Something"],
+            ],
         };
     }
 
-    pub fn move_right() {
-
+    fn adjust_item_pos(&mut self) {
+        self.menu_item = 0;
     }
-}
 
-pub fn draw_menu(current_selected: &u16, current_item: &u16) -> io::Result<DrawResult> {
-    let titles = ["File", "Color", "Settings"];
+    pub fn move_right(&mut self) {
+        self.menu_option = (self.menu_option + 1) % self.titles.len();
+        self.adjust_item_pos();
+    }
 
-    let menu: [Vec<&str>; 3] = [
-        vec!["New file", "Open file", "Save", "Save as"],
-        vec!["Theme1", "Theme2", "Theme3"],
-        vec!["Save on unfocus", "Something"],
-    ];
+    pub fn move_left(&mut self) {
+        if self.menu_option > 0 {
+            self.menu_option -= 1;
+        } else {
+            self.menu_option = self.titles.len() - 1;
+        }
 
-    let mut width = 0;
+        self.adjust_item_pos();
+    }
 
-    for i in 0..menu.len() {
-        let current_list = &menu[i];
-        for j in 0..current_list.len() {
-            let current_len = current_list[j].len();
-            if current_len > width {
-                width = current_len;
+    pub fn move_up(&mut self) {
+        if self.menu_item > 0 {
+            self.menu_item -= 1;
+        } else {
+            self.menu_item = self.items[self.menu_option].len() - 1;
+        }
+    }
+
+    pub fn move_down(&mut self) {
+        self.menu_item = (self.menu_item + 1) % self.items[self.menu_option].len();
+    }
+
+    pub fn reset(&mut self) {
+        self.menu_option = 99;
+    }
+
+    pub fn draw_header(&mut self) -> io::Result<usize> {
+        let mut start_pos = 0;
+
+        for i in 0..self.titles.len() {
+            if i == self.menu_option {
+                print!("{}", self.titles[i].on_white());
+            } else {
+                print!("{}", self.titles[i]);
+            }
+
+            if self.menu_option > i {
+                start_pos += self.titles[i].len() + 1;
+            }
+
+            if i != self.titles.len() - 1 {
+                print!("{}", " ");
             }
         }
+
+        return Ok(start_pos);
     }
 
-    let mut start_pos = 0;
+    pub fn draw(&mut self) -> io::Result<()> {
+        let start_pos = self.draw_header()?;
 
-    for i in 0..titles.len() {
-        if i == *current_selected as usize {
-            print!("{}", titles[i].on_white());
-        } else {
-            print!("{}", titles[i]);
+        execute!(io::stdout(), MoveTo(start_pos as u16, 1))?;
+
+        let mut i = 0;
+        for text in &self.items[self.menu_option] {
+            let parsed_text;
+            let spacer;
+
+            if i == self.menu_item {
+                parsed_text = text.on_blue();
+                spacer = " ".on_blue();
+            } else {
+                parsed_text = text.on_white();
+                spacer = " ".on_white();
+            }
+
+            print!("{}", parsed_text);
+            for _ in 0..20 - text.len() {
+                print!("{}", spacer);
+            }
+
+            i += 1;
+            execute!(io::stdout(), MoveTo(start_pos as u16, i as u16 + 1))?;
         }
 
-        if *current_selected > i as u16 {
-            start_pos += titles[i].len() + 1;
-        }
-
-        if i != titles.len() - 1 {
-            print!("{}", " ");
-        }
+        Ok(())
     }
 
-    execute!(io::stdout(), MoveTo(start_pos as u16, 1))?;
-
-    let mut result = 0;
-    let mut selected_action = "";
-
-    let mut i = 0;
-    for text in &menu[*current_selected as usize] {
-        result += 1;
-        let parsed_text;
-        let spacer;
-
-        if i == *current_item {
-            parsed_text = text.on_blue();
-            spacer = " ".on_blue();
-            selected_action = text;
-        } else {
-            parsed_text = text.on_white();
-            spacer = " ".on_white();
-        }
-
-        print!("{}", parsed_text);
-        for _ in 0..20 - text.len() {
-            print!("{}", spacer);
-        }
-
-        i += 1;
-        execute!(io::stdout(), MoveTo(start_pos as u16, i + 1))?;
+    pub fn select(&mut self) -> &str {
+        return self.items[self.menu_option][self.menu_item];
     }
-
-    // println!("CURRENT MENU OPTION: {}", *current_item);
-
-    return Ok(DrawResult {
-        selected_index: result - 1,
-        selected_action: selected_action.to_string(),
-    });
 }

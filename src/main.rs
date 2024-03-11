@@ -4,13 +4,14 @@ use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, Clear, ClearType};
 
+use std::borrow::{Borrow, BorrowMut};
 use std::env;
 use std::fs::read_to_string;
 use std::io::{self, Write};
 
 mod menu;
 
-use menu::draw_menu;
+use menu::Menu;
 
 enum Mode {
     WriteMode,
@@ -141,14 +142,17 @@ fn main() -> io::Result<()> {
     let mut current_line: usize = 0;
     let mut current_char: usize = 0;
 
-    // menu
-    let mut menu_option: u16 = 0;
-    let mut menu_item: u16 = 0;
-    let mut menu_size: u16 = 0;
+    let mut menu = Menu::new();
 
     let mut initial = true;
     let mut current_mode = Mode::WriteMode;
     let mut term_size = size().unwrap();
+
+    let save_file = |lines: &Vec<String>| -> io::Result<String> {
+        clear_all()?;
+        std::fs::write(&file_path, lines.clone().join("\n"))?;
+        return Ok("File saved as '".to_owned() + file_name + "'");
+    };
 
     execute!(io::stdout(), MoveTo(0, 0))?;
     loop {
@@ -171,9 +175,7 @@ fn main() -> io::Result<()> {
 
                         match current_mode {
                             Mode::MenuMode => {
-                                if menu_item < menu_size {
-                                    menu_item += 1
-                                }
+                                menu.move_down();
                             }
                             _ => move_down(&mut current_line, &mut current_char, &lines)?,
                         }
@@ -185,9 +187,7 @@ fn main() -> io::Result<()> {
 
                         match current_mode {
                             Mode::MenuMode => {
-                                if menu_item > 0 {
-                                    menu_item -= 1
-                                }
+                                menu.move_up();
                             }
                             _ => move_up(&mut current_line, &mut current_char, &lines)?,
                         }
@@ -199,11 +199,8 @@ fn main() -> io::Result<()> {
 
                         match current_mode {
                             Mode::MenuMode => {
-                                if menu_option < 2 {
-                                    menu_option += 1;
-                                    menu_item = 0;
-                                    clear_all()?;
-                                }
+                                menu.move_right();
+                                clear_all()?;
                             }
                             _ => move_right(&mut current_char, &current_line, &lines, false)?,
                         }
@@ -215,43 +212,58 @@ fn main() -> io::Result<()> {
 
                         match current_mode {
                             Mode::MenuMode => {
-                                if menu_option > 0 {
-                                    menu_option -= 1;
-                                    menu_item = 0;
-                                    clear_all()?;
-                                }
+                                menu.move_left();
+                                clear_all()?;
                             }
                             _ => move_left(&mut current_char, &current_line, &mut lines, false)?,
                         }
 
                         changed_line = true;
                     }
-                    KeyCode::Enter => {
-                        changed_line = true;
-                        current_line += 1;
-                        lines.insert(current_line, String::new());
+                    KeyCode::Enter => match current_mode {
+                        Mode::MenuMode => {
+                            let selected_action = menu.select();
+                            current_mode = Mode::WriteMode;
+                            changed_line = true;
 
-                        if current_char < lines[current_line - 1].len() {
-                            lines[current_line] = lines[current_line - 1]
-                                [current_char..lines[current_line - 1].len()]
-                                .to_string();
-
-                            lines[current_line - 1] =
-                                lines[current_line - 1][0..current_char].to_string();
+                            match selected_action {
+                                "Save" => {
+                                    info_text = save_file(&lines)?;
+                                }
+                                _ => clear_all()?,
+                            }
                         }
 
-                        current_char = 0;
-                        clear_all()?;
-                        if initial {
-                            lines.remove(0);
-                            current_line -= 1;
-                            initial = false;
+                        _ => {
+                            changed_line = true;
+                            current_line += 1;
+                            lines.insert(current_line, String::new());
+
+                            if current_char < lines[current_line - 1].len() {
+                                lines[current_line] = lines[current_line - 1]
+                                    [current_char..lines[current_line - 1].len()]
+                                    .to_string();
+
+                                lines[current_line - 1] =
+                                    lines[current_line - 1][0..current_char].to_string();
+                            }
+
+                            current_char = 0;
+                            clear_all()?;
+                            if initial {
+                                lines.remove(0);
+                                current_line -= 1;
+                                initial = false;
+                            }
                         }
-                    }
+                    },
 
                     KeyCode::F(2) => {
                         current_mode = match current_mode {
-                            Mode::MenuMode => Mode::WriteMode,
+                            Mode::MenuMode => {
+                                menu.reset();
+                                Mode::WriteMode
+                            }
                             _ => Mode::MenuMode,
                         };
                         changed_line = true;
@@ -287,10 +299,8 @@ fn main() -> io::Result<()> {
                             }
                             changed_line = true;
                         } else if key_event.modifiers == KeyModifiers::CONTROL && c == 's' {
-                            info_text = "File saved as '".to_owned() + file_name + "'";
+                            info_text = save_file(&lines)?;
                             changed_line = true;
-                            clear_all()?;
-                            std::fs::write(&file_path, lines.join("\n"))?;
                         } else if matches!(current_mode, Mode::EditMode) {
                             match c {
                                 'i' => match key_event.modifiers {
@@ -510,16 +520,18 @@ fn main() -> io::Result<()> {
         // println!("Debug info");
         // println!("{:?}", lines);
 
-        if matches!(current_mode, Mode::MenuMode) {
-            execute!(io::stdout(), SavePosition)?;
+        execute!(io::stdout(), SavePosition)?;
 
-            execute!(io::stdout(), MoveTo(0, 0))?;
-            let menu_result = draw_menu(&menu_option, &menu_item)?;
+        execute!(io::stdout(), MoveTo(0, 0))?;
 
-            menu_size = menu_result.
-
-            execute!(io::stdout(), RestorePosition)?;
+        match current_mode {
+            Mode::MenuMode => menu.draw()?,
+            _ => {
+                menu.draw_header()?;
+            }
         }
+
+        execute!(io::stdout(), RestorePosition)?;
 
         io::stdout().flush()?;
     }
