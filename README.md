@@ -2,6 +2,8 @@
 
 Small mode-based terminal based text editor
 
+[achodev.me/pico-term](https://achodev.me/pico-term)
+
 ## How to run
 
 Install `pico.exe` from [here](https://1drv.ms/u/s!AovQFIBO4x5Ziqo7r2KALTBCmNm4Rg?e=Hhihpk)
