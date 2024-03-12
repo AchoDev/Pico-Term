@@ -13,7 +13,7 @@ impl<'a> Menu<'a> {
     pub fn new() -> Self {
         return Self {
             menu_item: 0,
-            menu_option: 0,
+            menu_option: 99,
             titles: ["File", "Color", "Settings"],
             items: [
                 vec!["New file", "Open file", "Save", "Save as"],
@@ -55,6 +55,11 @@ impl<'a> Menu<'a> {
     }
 
     pub fn reset(&mut self) {
+        self.menu_option = 0;
+        self.menu_item = 0;
+    }
+
+    pub fn hide(&mut self) {
         self.menu_option = 99;
     }
 
@@ -81,6 +86,10 @@ impl<'a> Menu<'a> {
     }
 
     pub fn draw(&mut self) -> io::Result<()> {
+        if self.menu_option > 50 {
+            self.reset();
+        }
+
         let start_pos = self.draw_header()?;
 
         execute!(io::stdout(), MoveTo(start_pos as u16, 1))?;
@@ -111,6 +120,7 @@ impl<'a> Menu<'a> {
     }
 
     pub fn select(&mut self) -> &str {
+        self.hide();
         return self.items[self.menu_option][self.menu_item];
     }
 }

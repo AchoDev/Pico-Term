@@ -261,7 +261,7 @@ fn main() -> io::Result<()> {
                     KeyCode::F(2) => {
                         current_mode = match current_mode {
                             Mode::MenuMode => {
-                                menu.reset();
+                                menu.hide();
                                 Mode::WriteMode
                             }
                             _ => Mode::MenuMode,
