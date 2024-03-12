@@ -7,16 +7,20 @@ use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, Clear, ClearT
 use std::borrow::{Borrow, BorrowMut};
 use std::env;
 use std::fs::read_to_string;
+use std::future::Future;
 use std::io::{self, Write};
 
 mod menu;
+mod console;
 
 use menu::Menu;
+use console::Console;
 
 enum Mode {
     WriteMode,
     EditMode,
     MenuMode,
+    ConsoleMode,
 }
 
 fn move_down(
@@ -121,6 +125,7 @@ fn main() -> io::Result<()> {
     let file_path: String;
     let mut info_text = String::new();
 
+
     // println!(
     //     "{}",
     //     env::current_dir().unwrap().display().to_string() + &args[1]
@@ -143,6 +148,7 @@ fn main() -> io::Result<()> {
     let mut current_char: usize = 0;
 
     let mut menu = Menu::new();
+    let mut console = Console::new(prompt, target);
 
     let mut initial = true;
     let mut current_mode = Mode::WriteMode;
@@ -151,8 +157,12 @@ fn main() -> io::Result<()> {
     let save_file = |lines: &Vec<String>| -> io::Result<String> {
         clear_all()?;
         std::fs::write(&file_path, lines.clone().join("\n"))?;
+        
         return Ok("File saved as '".to_owned() + file_name + "'");
     };
+
+    let mut confirm_console = false;
+    let mut console_prompt = String::new();
 
     execute!(io::stdout(), MoveTo(0, 0))?;
     loop {
@@ -229,6 +239,9 @@ fn main() -> io::Result<()> {
                             match selected_action {
                                 "Save" => {
                                     info_text = save_file(&lines)?;
+                                }
+                                "Save as" => {
+                                    let name = await request_console_input()
                                 }
                                 _ => clear_all()?,
                             }

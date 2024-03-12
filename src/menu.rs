@@ -120,7 +120,8 @@ impl<'a> Menu<'a> {
     }
 
     pub fn select(&mut self) -> &str {
+        let result = self.items[self.menu_option][self.menu_item];
         self.hide();
-        return self.items[self.menu_option][self.menu_item];
+        return result;
     }
 }
