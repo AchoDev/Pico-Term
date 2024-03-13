@@ -9,12 +9,13 @@ use std::env;
 use std::fs::read_to_string;
 use std::future::Future;
 use std::io::{self, Write};
+use std::rc::Rc;
 
-mod menu;
 mod console;
+mod menu;
 
-use menu::Menu;
 use console::Console;
+use menu::Menu;
 
 enum Mode {
     WriteMode,
@@ -121,10 +122,9 @@ fn main() -> io::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     let mut lines: Vec<String>;
-    let file_name: &str;
+    let mut file_name: String;
     let file_path: String;
     let mut info_text = String::new();
-
 
     // println!(
     //     "{}",
@@ -135,10 +135,10 @@ fn main() -> io::Result<()> {
         file_path = env::current_dir().unwrap().display().to_string() + "/" + &args[1];
         let file = read_to_string(&file_path)?;
         lines = file.lines().map(|s| s.to_string()).collect();
-        file_name = &args[1];
+        file_name = args[1];
     } else {
         lines = vec!["".to_string()];
-        file_name = "new_file.txt";
+        file_name = String::from("new_file.txt");
         file_path = env::current_dir().unwrap().display().to_string() + "/new_file.txt";
     }
 
@@ -148,7 +148,7 @@ fn main() -> io::Result<()> {
     let mut current_char: usize = 0;
 
     let mut menu = Menu::new();
-    let mut console = Console::new(prompt, target);
+    let mut console = Console::new();
 
     let mut initial = true;
     let mut current_mode = Mode::WriteMode;
@@ -157,12 +157,19 @@ fn main() -> io::Result<()> {
     let save_file = |lines: &Vec<String>| -> io::Result<String> {
         clear_all()?;
         std::fs::write(&file_path, lines.clone().join("\n"))?;
-        
-        return Ok("File saved as '".to_owned() + file_name + "'");
+
+        return Ok("File saved as '".to_owned() + &file_name + "'");
     };
 
-    let mut confirm_console = false;
-    let mut console_prompt = String::new();
+    let save_file_as = |lines: &Vec<String>, name: String| -> io::Result<String> {
+        clear_all()?;
+        std::fs::write(
+            env::current_dir().unwrap().display().to_string() + "/" + &name,
+            lines.clone().join("\n"),
+        )?;
+
+        Ok("File saved as '".to_owned() + &name + "'")
+    };
 
     execute!(io::stdout(), MoveTo(0, 0))?;
     loop {
@@ -241,8 +248,10 @@ fn main() -> io::Result<()> {
                                     info_text = save_file(&lines)?;
                                 }
                                 "Save as" => {
-                                    let name = await request_console_input()
+                                    let name = console.open(
+                                        "File name: ")
                                 }
+
                                 _ => clear_all()?,
                             }
                         }
@@ -460,7 +469,7 @@ fn main() -> io::Result<()> {
 
         println!("{}", "Pico - AchoDev".dark_blue());
         print!("{}", "----| ".dark_grey());
-        println!("{}", file_name.dark_grey());
+        println!("{}", file_name.clone().dark_grey());
 
         for i in 0..term_size.1 - 9 {
             let line;

@@ -1,27 +1,44 @@
-pub struct Console<'a> {
-    prompt: &'a str,
+use crossterm::style::Stylize;
+
+pub struct Console {
+    prompt: String,
     input: String,
     current_char: usize,
-    target: &'a mut String,
+    submitted: bool,
 }
 
-impl<'a> Console<'a> {
-    pub fn new(prompt: &str) -> Self {
+impl Console {
+    pub fn new() -> Self {
         Self {
-            prompt,
+            prompt: String::new(),
             input: String::new(),
             current_char: 0,
-            target: &mut String::new(),
+            submitted: false,
         }
     }
 
-    pub fn open(&mut self, target_ref: &mut String) {
-        self.target = target_ref;
+    pub fn open(&mut self, prompt: &str) -> &str {
         self.current_char = 0;
-        self.input = String::new();
+        self.input.clear();
+        self.prompt = String::from(prompt);
     }
 
     pub fn draw(&mut self) {
-        println!("{}", &self.prompt);
+        println!("{}", self.prompt.clone().red());
+        print!("{}", "CONSOLE />".red());
+
+        print!("{}", &self.input[0..self.current_char]);
+        print!(
+            "{}",
+            &self.input[self.current_char..self.current_char + 1].on_red()
+        );
+        print!(
+            "{}",
+            &self.input[self.current_char + 1..self.input.len() - 1]
+        );
+    }
+
+    pub fn submit(&mut self) {
+        (self.on_submit)(self.input.clone());
     }
 }
