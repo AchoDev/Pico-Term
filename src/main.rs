@@ -4,15 +4,14 @@ use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, Clear, ClearType};
 
-use std::borrow::{Borrow, BorrowMut};
 use std::env;
 use std::fs::read_to_string;
-use std::future::Future;
 use std::io::{self, Write};
-use std::rc::Rc;
 
 mod console;
+mod functions;
 mod menu;
+mod skeleton;
 
 use console::Console;
 use menu::Menu;
@@ -135,7 +134,7 @@ fn main() -> io::Result<()> {
         file_path = env::current_dir().unwrap().display().to_string() + "/" + &args[1];
         let file = read_to_string(&file_path)?;
         lines = file.lines().map(|s| s.to_string()).collect();
-        file_name = args[1];
+        file_name = args[1].clone();
     } else {
         lines = vec!["".to_string()];
         file_name = String::from("new_file.txt");
@@ -154,21 +153,20 @@ fn main() -> io::Result<()> {
     let mut current_mode = Mode::WriteMode;
     let mut term_size = size().unwrap();
 
-    let save_file = |lines: &Vec<String>| -> io::Result<String> {
+    let __save_file = |lines: &Vec<String>| -> io::Result<String> {
         clear_all()?;
         std::fs::write(&file_path, lines.clone().join("\n"))?;
-
-        return Ok("File saved as '".to_owned() + &file_name + "'");
+        return Ok("File saved as '".to_owned() + &file_name.clone() + "'");
     };
 
-    let save_file_as = |lines: &Vec<String>, name: String| -> io::Result<String> {
+    let save_file_as = |lines: &Vec<String>, name: &str| -> io::Result<String> {
         clear_all()?;
         std::fs::write(
             env::current_dir().unwrap().display().to_string() + "/" + &name,
             lines.clone().join("\n"),
         )?;
 
-        Ok("File saved as '".to_owned() + &name + "'")
+        Ok("File saved as '".to_owned() + name + "'")
     };
 
     execute!(io::stdout(), MoveTo(0, 0))?;
@@ -245,11 +243,16 @@ fn main() -> io::Result<()> {
 
                             match selected_action {
                                 "Save" => {
-                                    info_text = save_file(&lines)?;
+                                    info_text = save_file_as(&lines, &file_name)?;
                                 }
                                 "Save as" => {
-                                    let name = console.open(
-                                        "File name: ")
+                                    let name = console.open("File name: ");
+
+                                    if name.is_ok() {
+                                        let name = name.unwrap();
+                                        info_text = save_file_as(&lines, name)?;
+                                        file_name = name.to_owned();
+                                    }
                                 }
 
                                 _ => clear_all()?,
@@ -560,21 +563,5 @@ fn main() -> io::Result<()> {
 
     disable_raw_mode()?;
     execute!(io::stdout(), Show)?;
-    Ok(())
-}
-
-fn clear_screen() -> io::Result<()> {
-    execute!(io::stdout(), Clear(ClearType::Purge))?;
-
-    io::stdout().flush()?;
-
-    Ok(())
-}
-
-fn clear_all() -> io::Result<()> {
-    execute!(io::stdout(), Clear(ClearType::CurrentLine))?;
-    execute!(io::stdout(), Clear(ClearType::FromCursorUp))?;
-
-    io::stdout().flush()?;
     Ok(())
 }
