@@ -1,6 +1,6 @@
 use crate::functions::move_to;
 
-fn skeleton(size: (usize, usize)) {
+fn draw_skeleton(size: (usize, usize)) {
     move_to(0, 0);
 
     println!("{}", "----|".dark_grey());

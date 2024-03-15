@@ -3,6 +3,7 @@ use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, Clear, ClearType};
+use functions::{move_to, purge};
 
 use std::env;
 use std::fs::read_to_string;
@@ -444,119 +445,38 @@ fn main() -> io::Result<()> {
             }
         }
 
-        execute!(io::stdout(), MoveTo(0, 0))?;
-        clear_screen()?;
+        move_to(0, 0)?;
+        purge()?;
+
         if !changed_line && !initial {
             continue;
         }
 
         initial = false;
 
-        // println!("{} {}", current_char, lines[current_line].len());
+        draw_skeleton(
+            &lines,
+            &current_mode,
+            &(term_size.1 as usize),
+            &current_line,
+            &current_char,
+            &info_text,
+            &file_name,
+        );
 
-        let mut char = match current_char == lines[current_line].len() {
-            true => ' '.on_white(),
-            false => lines[current_line]
-                .chars()
-                .nth(current_char)
-                .unwrap()
-                .on_white(),
-        };
-
-        if matches!(current_mode, Mode::EditMode) {
-            char = char.white().on_dark_green();
-        }
-        // else if matches!(current_mode, Mode::MenuMode) {
-        //     char = char.white()
-        // }
-
-        println!("{}", "Pico - AchoDev".dark_blue());
-        print!("{}", "----| ".dark_grey());
-        println!("{}", file_name.clone().dark_grey());
-
-        for i in 0..term_size.1 - 9 {
-            let line;
-            let written_line;
-            if i < lines.len() as u16 {
-                line = lines[i as usize].clone();
-                written_line = true;
-            } else {
-                line = String::new();
-                written_line = false;
-            }
-            let start: &str;
-            let mut end: &str = "";
-
-            if current_line == i as usize {
-                start = &line[0..current_char];
-                if current_char < line.len() {
-                    end = &line[current_char + 1..line.len()];
-                }
-            } else {
-                start = &line
-            }
-
-            if written_line {
-                print!("{}", (i + 1).to_string().dark_grey());
-            } else {
-                print!("    ");
-            }
-            let mut spacer_length: i16 = 3;
-            spacer_length -= (i + 1).to_string().len() as i16;
-
-            while spacer_length >= 0 {
-                spacer_length -= 1;
-                if written_line {
-                    print!(" ");
-                }
-            }
-
-            print!("{}", "| ".dark_grey());
-            print!("{}", start);
-
-            if current_line == i as usize {
-                print!("{}", char);
-            }
-
-            print!("{}", end);
-
-            // print!("{}", &lines[current_line]);
-
-            println!("");
-        }
-        println!("{}", "----|".dark_grey());
-        println!("\nLine: {} Char: {}", current_line + 1, current_char);
-        print!("{}", info_text.clone().on_white());
-        if matches!(current_mode, Mode::EditMode) {
-            println!("\n{}", "EDIT MODE".on_dark_green());
-            print!("{}", "Switch to write mode: Q".dark_green());
-            // print!("{}", "Move cursor: I J K L".dark_green());
-            // print!("{}", "Move to next word: ALT + J / K".dark_green());
-            // print!("{}", "Move line up/down: ALT + I / K".dark_green());
-            // print!("{}", "Move to start/end of line: U / O".dark_green());
-        } else {
-            println!("\n{}", "WRITE MODE".on_blue());
-            print!("{}", "Switch to edit mode: ALT + J ".blue());
-            print!("{}", "|".dark_blue());
-            // println!("{}", "Press F1 to enter Menu Mode".blue());
-            print!("{}", " Exit Pico: ESC".blue());
-        }
-
-        // println!("Debug info");
-        // println!("{:?}", lines);
-
-        execute!(io::stdout(), SavePosition)?;
-
-        execute!(io::stdout(), MoveTo(0, 0))?;
+        move_to(0, 0)?;
 
         match current_mode {
             Mode::MenuMode => menu.draw()?,
+            Mode::ConsoleMode => {
+                move_to(0, &term_size.1 - 3);
+                menu.draw_header()?;
+                console.draw();
+            }
             _ => {
                 menu.draw_header()?;
             }
         }
-
-        execute!(io::stdout(), RestorePosition)?;
 
         io::stdout().flush()?;
     }
@@ -564,4 +484,94 @@ fn main() -> io::Result<()> {
     disable_raw_mode()?;
     execute!(io::stdout(), Show)?;
     Ok(())
+}
+
+fn draw_skeleton(
+    lines: &Vec<String>,
+    mode: &Mode,
+    height: &usize,
+    current_line: &usize,
+    current_char: &usize,
+    info_text: &String,
+    file_name: &String,
+) {
+    let mut char = match *current_char == lines[*current_line].len() {
+        true => ' '.on_white(),
+        false => lines[*current_line]
+            .chars()
+            .nth(*current_char)
+            .unwrap()
+            .on_white(),
+    };
+
+    if matches!(*mode, Mode::EditMode) {
+        char = char.white().on_dark_green();
+    }
+
+    println!("{}", "Pico - AchoDev".dark_blue());
+    print!("{}", "----| ".dark_grey());
+    println!("{}", file_name.clone().dark_grey());
+
+    for i in 0..height - 9 {
+        let line;
+        let written_line;
+        if i < lines.len() {
+            line = lines[i as usize].clone();
+            written_line = true;
+        } else {
+            line = String::new();
+            written_line = false;
+        }
+        let start: &str;
+        let mut end: &str = "";
+
+        if *current_line == i as usize {
+            start = &line[0..*current_char];
+            if current_char < &line.len() {
+                end = &line[current_char + 1..line.len()];
+            }
+        } else {
+            start = &line
+        }
+
+        if written_line {
+            print!("{}", (i + 1).to_string().dark_grey());
+        } else {
+            print!("    ");
+        }
+        let mut spacer_length: i16 = 3;
+        spacer_length -= (i + 1).to_string().len() as i16;
+
+        while spacer_length >= 0 {
+            spacer_length -= 1;
+            if written_line {
+                print!(" ");
+            }
+        }
+
+        print!("{}", "| ".dark_grey());
+        print!("{}", start);
+
+        if *current_line == i {
+            print!("{}", char);
+        }
+
+        print!("{}", end);
+
+        println!("");
+    }
+
+    println!("{}", "----|".dark_grey());
+    println!("\nLine: {} Char: {}", current_line + 1, current_char);
+    print!("{}", info_text.clone().on_white());
+    if matches!(*mode, Mode::EditMode) {
+        println!("\n{}", "EDIT MODE".on_dark_green());
+        print!("{}", "Switch to write mode: Q".dark_green());
+    } else {
+        println!("\n{}", "WRITE MODE".on_blue());
+        print!("{}", "Switch to edit mode: ALT + J ".blue());
+        print!("{}", "|".dark_blue());
+        // println!("{}", "Press F1 to enter Menu Mode".blue());
+        print!("{}", " Exit Pico: ESC".blue());
+    }
 }

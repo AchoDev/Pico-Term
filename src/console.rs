@@ -70,6 +70,13 @@ impl Console {
             &self.input[self.current_char + 1..self.input.len() - 1]
         );
     }
+
+    pub fn submit(&mut self) -> String {
+        let result = self.input.clone();
+        self.input.clear();
+        self.current_char = 0;
+        return result;
+    }
 }
 
 fn clear_all() -> io::Result<()> {
