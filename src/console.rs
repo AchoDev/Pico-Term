@@ -7,11 +7,16 @@ use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{size, Clear, ClearType};
 
+pub enum ConsoleAction {
+    SaveAs,
+}
+
 pub struct Console {
     prompt: String,
     input: String,
     current_char: usize,
     submitted: bool,
+    action: ConsoleAction,
 }
 
 impl Console {
@@ -21,6 +26,7 @@ impl Console {
             input: String::new(),
             current_char: 0,
             submitted: false,
+            action: ConsoleAction::SaveAs,
         }
     }
 
@@ -56,7 +62,12 @@ impl Console {
         }
     }
 
-    pub fn draw(&mut self) {
+    pub fn draw(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char(c) => self.input.push(c),
+            _ => {}
+        }
+
         println!("{}", self.prompt.clone().red());
         print!("{}", "CONSOLE />".red());
 

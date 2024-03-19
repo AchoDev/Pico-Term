@@ -1,9 +1,9 @@
-use crossterm::cursor::{Hide, MoveTo, RestorePosition, SavePosition, Show};
+use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size, Clear, ClearType};
-use functions::{move_to, purge};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
+use functions::{clear, move_to, purge};
 
 use std::env;
 use std::fs::read_to_string;
@@ -12,7 +12,6 @@ use std::io::{self, Write};
 mod console;
 mod functions;
 mod menu;
-mod skeleton;
 
 use console::Console;
 use menu::Menu;
@@ -38,7 +37,7 @@ fn move_down(
     if *current_char >= lines[*current_line].len() {
         *current_char = lines[*current_line].len()
     }
-    clear_all()?;
+    clear()?;
     Ok(())
 }
 
@@ -56,7 +55,7 @@ fn move_up(
     if *current_char >= lines[*current_line].len() {
         *current_char = lines[*current_line].len()
     }
-    clear_all()?;
+    clear()?;
     Ok(())
 }
 
@@ -85,7 +84,7 @@ fn move_right(
         }
     }
 
-    clear_all()?;
+    clear()?;
     Ok(())
 }
 
@@ -112,7 +111,7 @@ fn move_left(
         }
     }
 
-    clear_all()?;
+    clear()?;
     Ok(())
 }
 
@@ -142,7 +141,7 @@ fn main() -> io::Result<()> {
         file_path = env::current_dir().unwrap().display().to_string() + "/new_file.txt";
     }
 
-    clear_all()?;
+    clear()?;
 
     let mut current_line: usize = 0;
     let mut current_char: usize = 0;
@@ -154,14 +153,8 @@ fn main() -> io::Result<()> {
     let mut current_mode = Mode::WriteMode;
     let mut term_size = size().unwrap();
 
-    let __save_file = |lines: &Vec<String>| -> io::Result<String> {
-        clear_all()?;
-        std::fs::write(&file_path, lines.clone().join("\n"))?;
-        return Ok("File saved as '".to_owned() + &file_name.clone() + "'");
-    };
-
     let save_file_as = |lines: &Vec<String>, name: &str| -> io::Result<String> {
-        clear_all()?;
+        clear()?;
         std::fs::write(
             env::current_dir().unwrap().display().to_string() + "/" + &name,
             lines.clone().join("\n"),
@@ -178,7 +171,7 @@ fn main() -> io::Result<()> {
                 term_size.0 = width;
                 term_size.1 = height;
                 changed_line = true;
-                clear_all()?;
+                clear()?;
             }
             if let Event::Key(key_event) = event {
                 if key_event.kind != KeyEventKind::Press && !initial {
@@ -216,7 +209,7 @@ fn main() -> io::Result<()> {
                         match current_mode {
                             Mode::MenuMode => {
                                 menu.move_right();
-                                clear_all()?;
+                                clear()?;
                             }
                             _ => move_right(&mut current_char, &current_line, &lines, false)?,
                         }
@@ -229,7 +222,7 @@ fn main() -> io::Result<()> {
                         match current_mode {
                             Mode::MenuMode => {
                                 menu.move_left();
-                                clear_all()?;
+                                clear()?;
                             }
                             _ => move_left(&mut current_char, &current_line, &mut lines, false)?,
                         }
@@ -247,7 +240,7 @@ fn main() -> io::Result<()> {
                                     info_text = save_file_as(&lines, &file_name)?;
                                 }
                                 "Save as" => {
-                                    let name = console.open("File name: ");
+                                    let name = console.;
 
                                     if name.is_ok() {
                                         let name = name.unwrap();
@@ -256,7 +249,7 @@ fn main() -> io::Result<()> {
                                     }
                                 }
 
-                                _ => clear_all()?,
+                                _ => clear()?,
                             }
                         }
 
@@ -275,7 +268,7 @@ fn main() -> io::Result<()> {
                             }
 
                             current_char = 0;
-                            clear_all()?;
+                            clear()?;
                             if initial {
                                 lines.remove(0);
                                 current_line -= 1;
@@ -293,7 +286,7 @@ fn main() -> io::Result<()> {
                             _ => Mode::MenuMode,
                         };
                         changed_line = true;
-                        clear_all()?;
+                        clear()?;
                     }
 
                     KeyCode::Tab => {
@@ -307,11 +300,11 @@ fn main() -> io::Result<()> {
                                 + "\t"
                                 + &lines[current_line][current_char - 1..lines[current_line].len()]
                         }
-                        clear_all()?;
+                        clear()?;
                     }
 
                     KeyCode::Esc => {
-                        clear_all()?;
+                        clear()?;
                         execute!(io::stdout(), MoveTo(0, 0))?;
                         break;
                     }
@@ -319,13 +312,13 @@ fn main() -> io::Result<()> {
                         if key_event.modifiers == KeyModifiers::ALT && c == 'j' {
                             if matches!(current_mode, Mode::WriteMode) {
                                 current_mode = Mode::EditMode;
-                                clear_all()?;
+                                clear()?;
                             } else {
                                 move_left(&mut current_char, &current_line, &mut lines, true)?;
                             }
                             changed_line = true;
                         } else if key_event.modifiers == KeyModifiers::CONTROL && c == 's' {
-                            info_text = save_file(&lines)?;
+                            info_text = save_file_as(&lines, &file_name)?;
                             changed_line = true;
                         } else if matches!(current_mode, Mode::EditMode) {
                             match c {
@@ -339,7 +332,7 @@ fn main() -> io::Result<()> {
                                             lines[current_line - 1] = cursor_line;
                                             current_line -= 1;
 
-                                            clear_all()?;
+                                            clear()?;
                                         }
                                     }
                                     _ => move_up(&mut current_line, &mut current_char, &lines)?,
@@ -353,7 +346,7 @@ fn main() -> io::Result<()> {
                                             lines[current_line] = next_line;
                                             lines[current_line + 1] = cursor_line;
                                             current_line += 1;
-                                            clear_all()?;
+                                            clear()?;
                                         }
                                     }
 
@@ -379,23 +372,23 @@ fn main() -> io::Result<()> {
 
                                 'u' => {
                                     current_char = 0;
-                                    clear_all()?;
+                                    clear()?;
                                 }
                                 'o' => {
                                     current_char = lines[current_line].len();
-                                    clear_all()?;
+                                    clear()?;
                                 }
 
                                 'q' => {
                                     current_mode = Mode::WriteMode;
-                                    clear_all()?;
+                                    clear()?;
                                 }
                                 _ => {}
                             }
                             changed_line = true;
                         } else {
                             info_text = String::new();
-                            clear_all()?;
+                            clear()?;
                             current_char += 1;
                             changed_line = true;
                             if current_char >= lines[current_line].len() {
@@ -433,7 +426,7 @@ fn main() -> io::Result<()> {
                         }
                         current_char -= 1;
                         changed_line = true;
-                        clear_all()?;
+                        clear()?;
                         // execute!(
                         //     io::stdout(),
                         //     MoveTo(current_char as u16, current_line as u16)
@@ -469,7 +462,7 @@ fn main() -> io::Result<()> {
         match current_mode {
             Mode::MenuMode => menu.draw()?,
             Mode::ConsoleMode => {
-                move_to(0, &term_size.1 - 3);
+                move_to(0, &term_size.1 - 3)?;
                 menu.draw_header()?;
                 console.draw();
             }
