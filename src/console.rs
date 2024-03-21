@@ -30,44 +30,11 @@ impl Console {
         }
     }
 
-    pub fn open(&mut self, prompt: &str) -> io::Result<&str> {
-        self.current_char = 0;
-        self.input.clear();
-        self.prompt = String::from(prompt);
-
-        loop {
-            let mut changed_line = false;
-
-            if let Ok(event) = read() {
-                if let Event::Key(key_event) = event {
-                    if key_event.kind != KeyEventKind::Press {
-                        continue;
-                    }
-                    match key_event.code {
-                        KeyCode::Char(c) => {
-                            self.input.push(c);
-                            changed_line = true;
-                        }
-                        KeyCode::Esc => return Err(Error::new(ErrorKind::Other, "esc")),
-                        _ => {}
-                    }
-                }
-            };
-
-            if changed_line {
-                clear_all()?;
-                execute!(io::stdout(), MoveTo(0, size().unwrap().0 - 1))?;
-                self.draw();
-            }
-        }
+    pub fn get_action(&mut self) -> &ConsoleAction {
+        return &self.action;
     }
 
-    pub fn draw(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char(c) => self.input.push(c),
-            _ => {}
-        }
-
+    pub fn draw(&mut self) {
         println!("{}", self.prompt.clone().red());
         print!("{}", "CONSOLE />".red());
 
@@ -87,6 +54,13 @@ impl Console {
         self.input.clear();
         self.current_char = 0;
         return result;
+    }
+
+    pub fn handle_key_event(&mut self, key_event: KeyEvent) {
+        match key_event.code {
+            KeyCode::Char(c) => self.input.push(c),
+            _ => {}
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
-use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
@@ -13,7 +13,7 @@ mod console;
 mod functions;
 mod menu;
 
-use console::Console;
+use console::{Console, ConsoleAction};
 use menu::Menu;
 
 enum Mode {
@@ -166,6 +166,28 @@ fn main() -> io::Result<()> {
     execute!(io::stdout(), MoveTo(0, 0))?;
     loop {
         let mut changed_line = false;
+
+        if matches!(current_mode, Mode::ConsoleMode) {
+            if let Ok(event) = read() {
+                if let Event::Key(key_event) = event {
+                    if key_event.kind != KeyEventKind::Press && !initial {
+                        continue;
+                    }
+                    changed_line = true;
+                    match key_event.code {
+                        KeyCode::Enter => {
+                            let result = console.submit();
+                            match *console.get_action() {
+                                ConsoleAction::SaveAs => info_text = save_file_as(&lines, &result)?,
+                            }
+                        }
+
+                        _ => console.handle_key_event(key_event),
+                    }
+                }
+            }
+        }
+
         if let Ok(event) = read() {
             if let Event::Resize(width, height) = event {
                 term_size.0 = width;
@@ -229,53 +251,28 @@ fn main() -> io::Result<()> {
 
                         changed_line = true;
                     }
-                    KeyCode::Enter => match current_mode {
-                        Mode::MenuMode => {
-                            let selected_action = menu.select();
-                            current_mode = Mode::WriteMode;
-                            changed_line = true;
+                    KeyCode::Enter => {
+                        changed_line = true;
+                        current_line += 1;
+                        lines.insert(current_line, String::new());
 
-                            match selected_action {
-                                "Save" => {
-                                    info_text = save_file_as(&lines, &file_name)?;
-                                }
-                                "Save as" => {
-                                    let name = console.;
+                        if current_char < lines[current_line - 1].len() {
+                            lines[current_line] = lines[current_line - 1]
+                                [current_char..lines[current_line - 1].len()]
+                                .to_string();
 
-                                    if name.is_ok() {
-                                        let name = name.unwrap();
-                                        info_text = save_file_as(&lines, name)?;
-                                        file_name = name.to_owned();
-                                    }
-                                }
-
-                                _ => clear()?,
-                            }
+                            lines[current_line - 1] =
+                                lines[current_line - 1][0..current_char].to_string();
                         }
 
-                        _ => {
-                            changed_line = true;
-                            current_line += 1;
-                            lines.insert(current_line, String::new());
-
-                            if current_char < lines[current_line - 1].len() {
-                                lines[current_line] = lines[current_line - 1]
-                                    [current_char..lines[current_line - 1].len()]
-                                    .to_string();
-
-                                lines[current_line - 1] =
-                                    lines[current_line - 1][0..current_char].to_string();
-                            }
-
-                            current_char = 0;
-                            clear()?;
-                            if initial {
-                                lines.remove(0);
-                                current_line -= 1;
-                                initial = false;
-                            }
+                        current_char = 0;
+                        clear()?;
+                        if initial {
+                            lines.remove(0);
+                            current_line -= 1;
+                            initial = false;
                         }
-                    },
+                    }
 
                     KeyCode::F(2) => {
                         current_mode = match current_mode {
