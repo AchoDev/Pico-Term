@@ -1,5 +1,5 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
-use crossterm::event::{read, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{read, Event, KeyCode, KeyEventKind};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
@@ -12,8 +12,10 @@ use std::io::{self, Write};
 mod console;
 mod functions;
 mod menu;
+mod write;
 
 use console::{Console, ConsoleAction};
+use functions::*;
 use menu::Menu;
 
 enum Mode {
@@ -21,98 +23,6 @@ enum Mode {
     EditMode,
     MenuMode,
     ConsoleMode,
-}
-
-fn move_down(
-    current_line: &mut usize,
-    current_char: &mut usize,
-    lines: &Vec<String>,
-) -> io::Result<()> {
-    if *current_line == lines.len() - 1 {
-        return Ok(());
-    }
-
-    *current_line += 1;
-
-    if *current_char >= lines[*current_line].len() {
-        *current_char = lines[*current_line].len()
-    }
-    clear()?;
-    Ok(())
-}
-
-fn move_up(
-    current_line: &mut usize,
-    current_char: &mut usize,
-    lines: &Vec<String>,
-) -> io::Result<()> {
-    if *current_line == 0 {
-        return Ok(());
-    }
-
-    *current_line -= 1;
-
-    if *current_char >= lines[*current_line].len() {
-        *current_char = lines[*current_line].len()
-    }
-    clear()?;
-    Ok(())
-}
-
-fn move_right(
-    current_char: &mut usize,
-    current_line: &usize,
-    lines: &Vec<String>,
-    whole_word: bool,
-) -> io::Result<()> {
-    if *current_char >= lines[*current_line].len() {
-        return Ok(());
-    }
-
-    *current_char += 1;
-
-    if whole_word {
-        while *current_char < lines[*current_line].len()
-            && lines[*current_line].chars().nth(*current_char).unwrap() == ' '
-        {
-            *current_char += 1;
-        }
-        while *current_char < lines[*current_line].len()
-            && lines[*current_line].chars().nth(*current_char).unwrap() != ' '
-        {
-            *current_char += 1;
-        }
-    }
-
-    clear()?;
-    Ok(())
-}
-
-fn move_left(
-    current_char: &mut usize,
-    current_line: &usize,
-    lines: &mut Vec<String>,
-    whole_word: bool,
-) -> io::Result<()> {
-    if *current_char == 0 {
-        return Ok(());
-    }
-
-    *current_char -= 1;
-
-    if whole_word {
-        while *current_char > 0 && lines[*current_line].chars().nth(*current_char).unwrap() == ' ' {
-            *current_char -= 1;
-        }
-        while *current_char > 0
-            && lines[*current_line].chars().nth(*current_char - 1).unwrap() != ' '
-        {
-            *current_char -= 1;
-        }
-    }
-
-    clear()?;
-    Ok(())
 }
 
 fn main() -> io::Result<()> {
@@ -186,6 +96,8 @@ fn main() -> io::Result<()> {
                     }
                 }
             }
+
+            continue;
         }
 
         if let Ok(event) = read() {
@@ -199,239 +111,27 @@ fn main() -> io::Result<()> {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
                 }
-                // initial = false;
-                match key_event.code {
-                    KeyCode::Down => {
-                        info_text = String::new();
 
-                        match current_mode {
-                            Mode::MenuMode => {
-                                menu.move_down();
-                            }
-                            _ => move_down(&mut current_line, &mut current_char, &lines)?,
-                        }
-
-                        changed_line = true;
-                    }
-                    KeyCode::Up => {
-                        info_text = String::new();
-
-                        match current_mode {
-                            Mode::MenuMode => {
-                                menu.move_up();
-                            }
-                            _ => move_up(&mut current_line, &mut current_char, &lines)?,
-                        }
-
-                        changed_line = true;
-                    }
-                    KeyCode::Right => {
-                        info_text = String::new();
-
-                        match current_mode {
-                            Mode::MenuMode => {
-                                menu.move_right();
-                                clear()?;
-                            }
-                            _ => move_right(&mut current_char, &current_line, &lines, false)?,
-                        }
-
-                        changed_line = true;
-                    }
-                    KeyCode::Left => {
-                        info_text = String::new();
-
-                        match current_mode {
-                            Mode::MenuMode => {
-                                menu.move_left();
-                                clear()?;
-                            }
-                            _ => move_left(&mut current_char, &current_line, &mut lines, false)?,
-                        }
-
-                        changed_line = true;
-                    }
-                    KeyCode::Enter => {
-                        changed_line = true;
-                        current_line += 1;
-                        lines.insert(current_line, String::new());
-
-                        if current_char < lines[current_line - 1].len() {
-                            lines[current_line] = lines[current_line - 1]
-                                [current_char..lines[current_line - 1].len()]
-                                .to_string();
-
-                            lines[current_line - 1] =
-                                lines[current_line - 1][0..current_char].to_string();
-                        }
-
-                        current_char = 0;
-                        clear()?;
-                        if initial {
-                            lines.remove(0);
-                            current_line -= 1;
-                            initial = false;
-                        }
-                    }
-
-                    KeyCode::F(2) => {
-                        current_mode = match current_mode {
-                            Mode::MenuMode => {
-                                menu.hide();
-                                Mode::WriteMode
-                            }
-                            _ => Mode::MenuMode,
-                        };
-                        changed_line = true;
-                        clear()?;
-                    }
-
-                    KeyCode::Tab => {
-                        current_char += 1;
-                        changed_line = true;
-                        if current_char >= lines[current_line].len() {
-                            lines[current_line].push('\t');
-                        } else {
-                            lines[current_line] = lines[current_line][0..current_char - 1]
-                                .to_string()
-                                + "\t"
-                                + &lines[current_line][current_char - 1..lines[current_line].len()]
-                        }
-                        clear()?;
-                    }
-
-                    KeyCode::Esc => {
-                        clear()?;
-                        execute!(io::stdout(), MoveTo(0, 0))?;
-                        break;
-                    }
-                    KeyCode::Char(c) => {
-                        if key_event.modifiers == KeyModifiers::ALT && c == 'j' {
-                            if matches!(current_mode, Mode::WriteMode) {
-                                current_mode = Mode::EditMode;
-                                clear()?;
-                            } else {
-                                move_left(&mut current_char, &current_line, &mut lines, true)?;
-                            }
-                            changed_line = true;
-                        } else if key_event.modifiers == KeyModifiers::CONTROL && c == 's' {
-                            info_text = save_file_as(&lines, &file_name)?;
-                            changed_line = true;
-                        } else if matches!(current_mode, Mode::EditMode) {
-                            match c {
-                                'i' => match key_event.modifiers {
-                                    KeyModifiers::ALT => {
-                                        if current_line > 0 {
-                                            let cursor_line = lines[current_line].clone();
-                                            let next_line = lines[current_line - 1].clone();
-
-                                            lines[current_line] = next_line;
-                                            lines[current_line - 1] = cursor_line;
-                                            current_line -= 1;
-
-                                            clear()?;
-                                        }
-                                    }
-                                    _ => move_up(&mut current_line, &mut current_char, &lines)?,
-                                },
-                                'k' => match key_event.modifiers {
-                                    KeyModifiers::ALT => {
-                                        if current_line < lines.len() - 1 {
-                                            let cursor_line = lines[current_line].clone();
-                                            let next_line = lines[current_line + 1].clone();
-
-                                            lines[current_line] = next_line;
-                                            lines[current_line + 1] = cursor_line;
-                                            current_line += 1;
-                                            clear()?;
-                                        }
-                                    }
-
-                                    _ => move_down(&mut current_line, &mut current_char, &lines)?,
-                                },
-                                'l' => {
-                                    let whole_word: bool = match key_event.modifiers {
-                                        KeyModifiers::ALT => true,
-                                        _ => false,
-                                    };
-
-                                    move_right(
-                                        &mut current_char,
-                                        &current_line,
-                                        &lines,
-                                        whole_word,
-                                    )?;
-                                }
-
-                                'j' => {
-                                    move_left(&mut current_char, &current_line, &mut lines, false)?
-                                }
-
-                                'u' => {
-                                    current_char = 0;
-                                    clear()?;
-                                }
-                                'o' => {
-                                    current_char = lines[current_line].len();
-                                    clear()?;
-                                }
-
-                                'q' => {
-                                    current_mode = Mode::WriteMode;
-                                    clear()?;
-                                }
-                                _ => {}
-                            }
-                            changed_line = true;
-                        } else {
-                            info_text = String::new();
-                            clear()?;
-                            current_char += 1;
-                            changed_line = true;
-                            if current_char >= lines[current_line].len() {
-                                lines[current_line].push(c);
-                            } else {
-                                lines[current_line] = lines[current_line][0..current_char - 1]
-                                    .to_string()
-                                    + &c.to_string()
-                                    + &lines[current_line]
-                                        [current_char - 1..lines[current_line].len()]
-                            }
-                        }
-                    }
-                    KeyCode::Backspace => {
-                        if current_char == 0 {
-                            info_text = String::new();
-                            if current_line == 0 {
-                                continue;
-                            }
-
-                            let copied_line = lines[current_line].clone();
-                            lines[current_line - 1].push_str(&copied_line);
-                            lines.remove(current_line);
-
-                            current_line -= 1;
-                            current_char = lines[current_line].len() - copied_line.len();
-                            current_char += 1;
-                        } else if current_char >= lines[current_line].len() {
-                            lines[current_line].pop();
-                            // clear_all()?;
-                        } else {
-                            lines[current_line] = lines[current_line][0..current_char - 1]
-                                .to_string()
-                                + &lines[current_line][current_char..lines[current_line].len()]
-                        }
-                        current_char -= 1;
-                        changed_line = true;
-                        clear()?;
-                        // execute!(
-                        //     io::stdout(),
-                        //     MoveTo(current_char as u16, current_line as u16)
-                        // )?;
-                    }
-
-                    _ => {}
+                match current_mode {
+                    Mode::ConsoleMode => {}
+                    Mode::MenuMode => {}
+                    Mode::WriteMode => {}
+                    Mode::EditMode => {}
                 }
+
+                if (key_event.code == KeyCode::Esc) {
+                    clear()?;
+                    move_to(0, 0)?;
+                    break;
+                }
+
+                // initial = false;
+                write::handle_key_event(
+                    key_event,
+                    &mut info_text,
+                    &mut current_line,
+                    &mut current_char,
+                )
             }
         }
 
