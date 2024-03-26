@@ -12,7 +12,7 @@ use std::io::{self, Write};
 mod console;
 mod functions;
 mod menu;
-mod write;
+mod writemode;
 
 use console::{Console, ConsoleAction};
 use functions::*;
@@ -112,6 +112,17 @@ fn main() -> io::Result<()> {
                     continue;
                 }
 
+                match key_event.code {
+                    KeyCode::Esc => {
+                        clear()?;
+                        move_to(0, 0)?;
+                        break;
+                    }
+                    KeyCode::F(2) => {}
+                }
+
+                if (key_event.code == KeyCode::Esc) {}
+
                 match current_mode {
                     Mode::ConsoleMode => {}
                     Mode::MenuMode => {}
@@ -119,14 +130,8 @@ fn main() -> io::Result<()> {
                     Mode::EditMode => {}
                 }
 
-                if (key_event.code == KeyCode::Esc) {
-                    clear()?;
-                    move_to(0, 0)?;
-                    break;
-                }
-
                 // initial = false;
-                write::handle_key_event(
+                writemode::handle_key_event(
                     key_event,
                     &mut info_text,
                     &mut current_line,
