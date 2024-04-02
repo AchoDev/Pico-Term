@@ -126,17 +126,20 @@ fn main() -> io::Result<()> {
                 match current_mode {
                     Mode::ConsoleMode => {}
                     Mode::MenuMode => {}
-                    Mode::WriteMode => {}
+                    Mode::WriteMode => {
+                        writemode::handle_key_event(
+                            key_event,
+                            &mut info_text,
+                            &mut current_line,
+                            &mut current_char,
+                            &mut lines,
+                            initial,
+                        )?;
+                    }
                     Mode::EditMode => {}
                 }
 
                 // initial = false;
-                writemode::handle_key_event(
-                    key_event,
-                    &mut info_text,
-                    &mut current_line,
-                    &mut current_char,
-                )
             }
         }
 

@@ -18,20 +18,20 @@ pub fn handle_key_event(
     match key_event.code {
         KeyCode::Down => {
             *info_text = String::new();
-            move_down(&mut current_line, &mut current_char, &lines)?;
+            move_down(current_line, current_char, lines)?;
         }
         KeyCode::Up => {
             *info_text = String::new();
-            move_up(&mut current_line, &mut current_char, &lines)?;
+            move_up(current_line, current_char, lines)?;
         }
         KeyCode::Right => {
             *info_text = String::new();
-            move_right(&mut current_char, &current_line, &lines, false)?;
+            move_right(current_char, current_line, lines, false)?;
         }
         KeyCode::Left => {
             *info_text = String::new();
 
-            move_left(&mut current_char, &current_line, &mut lines, false)?;
+            move_left(current_char, current_line, lines, false)?;
         }
         KeyCode::Enter => {
             *current_line += 1;
@@ -50,7 +50,6 @@ pub fn handle_key_event(
             if initial {
                 lines.remove(0);
                 *current_line -= 1;
-                initial = false;
             }
         }
 
@@ -68,50 +67,40 @@ pub fn handle_key_event(
         }
 
         KeyCode::Char(c) => {
-            if key_event.modifiers == KeyModifiers::ALT && c == 'j' {
-                if matches!(*current_mode, Mode::WriteMode) {
-                    *current_mode = Mode::EditMode;
-                    clear()?;
-                } else {
-                    move_left(&mut *current_char, &*current_line, &mut lines, true)?;
-                }
-                changed_line = true;
+            *info_text = String::new();
+            clear()?;
+            *current_char += 1;
+            changed_line = true;
+            if *current_char >= lines[*current_line].len() {
+                lines[*current_line].push(c);
             } else {
-                info_text = String::new();
-                clear()?;
-                *current_char += 1;
-                changed_line = true;
-                if *current_char >= lines[*current_line].len() {
-                    lines[*current_line].push(c);
-                } else {
-                    lines[current_line] = lines[current_line][0..current_char - 1].to_string()
-                        + &c.to_string()
-                        + &lines[current_line][current_char - 1..lines[current_line].len()]
-                }
+                lines[*current_line] = lines[*current_line][0..*current_char - 1].to_string()
+                    + &c.to_string()
+                    + &lines[*current_line][*current_char - 1..lines[*current_line].len()]
             }
         }
         KeyCode::Backspace => {
-            if current_char == 0 {
-                info_text = String::new();
-                if current_line == 0 {
-                    return;
+            if *current_char == 0 {
+                *info_text = String::new();
+                if *current_line == 0 {
+                    return Ok(false);
                 }
 
-                let copied_line = lines[current_line].clone();
-                lines[current_line - 1].push_str(&copied_line);
-                lines.remove(current_line);
+                let copied_line = lines[*current_line].clone();
+                lines[*current_line - 1].push_str(&copied_line);
+                lines.remove(*current_line);
 
-                current_line -= 1;
-                current_char = lines[current_line].len() - copied_line.len();
-                current_char += 1;
-            } else if current_char >= lines[current_line].len() {
-                lines[current_line].pop();
+                *current_line -= 1;
+                *current_char = lines[*current_line].len() - copied_line.len();
+                *current_char += 1;
+            } else if *current_char >= lines[*current_line].len() {
+                lines[*current_line].pop();
                 // clear_all()?;
             } else {
-                lines[current_line] = lines[current_line][0..current_char - 1].to_string()
-                    + &lines[current_line][current_char..lines[current_line].len()]
+                lines[*current_line] = lines[*current_line][0..*current_char - 1].to_string()
+                    + &lines[*current_line][*current_char..lines[*current_line].len()]
             }
-            current_char -= 1;
+            *current_char -= 1;
             changed_line = true;
             clear()?;
             // execute!(
