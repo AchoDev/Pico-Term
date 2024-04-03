@@ -119,6 +119,7 @@ fn main() -> io::Result<()> {
                         break;
                     }
                     KeyCode::F(2) => {}
+                    _ => {}
                 }
 
                 if (key_event.code == KeyCode::Esc) {}
@@ -127,7 +128,7 @@ fn main() -> io::Result<()> {
                     Mode::ConsoleMode => {}
                     Mode::MenuMode => {}
                     Mode::WriteMode => {
-                        writemode::handle_key_event(
+                        changed_line = writemode::handle_key_event(
                             key_event,
                             &mut info_text,
                             &mut current_line,
@@ -175,6 +176,8 @@ fn main() -> io::Result<()> {
                 menu.draw_header()?;
             }
         }
+
+        if (changed_line) {}
 
         io::stdout().flush()?;
     }
