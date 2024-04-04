@@ -1,5 +1,5 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
-use crossterm::event::{read, Event, KeyCode, KeyEventKind};
+use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
@@ -13,6 +13,7 @@ mod console;
 mod functions;
 mod menu;
 mod writemode;
+mod editmode;
 
 use console::{Console, ConsoleAction};
 use functions::*;
@@ -83,7 +84,6 @@ fn main() -> io::Result<()> {
                     if key_event.kind != KeyEventKind::Press && !initial {
                         continue;
                     }
-                    changed_line = true;
                     match key_event.code {
                         KeyCode::Enter => {
                             let result = console.submit();
@@ -119,10 +119,21 @@ fn main() -> io::Result<()> {
                         break;
                     }
                     KeyCode::F(2) => {}
+                    KeyCode::Char('j') => {
+                        if key_event.modifiers == KeyModifiers::ALT {
+                            match current_mode {
+                                Mode::WriteMode => current_mode = Mode::EditMode,
+                                Mode::EditMode => {
+                                    move_left(&mut current_char, &current_line, &mut lines, true)?
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
                     _ => {}
                 }
 
-                if (key_event.code == KeyCode::Esc) {}
+                if key_event.code == KeyCode::Esc {}
 
                 match current_mode {
                     Mode::ConsoleMode => {}
@@ -137,7 +148,9 @@ fn main() -> io::Result<()> {
                             initial,
                         )?;
                     }
-                    Mode::EditMode => {}
+                    Mode::EditMode => {
+                        
+                    }
                 }
 
                 // initial = false;
@@ -176,8 +189,6 @@ fn main() -> io::Result<()> {
                 menu.draw_header()?;
             }
         }
-
-        if (changed_line) {}
 
         io::stdout().flush()?;
     }

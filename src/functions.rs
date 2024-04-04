@@ -21,6 +21,7 @@ pub fn purge() -> io::Result<()> {
 pub fn clear() -> io::Result<()> {
     execute!(io::stdout(), Clear(ClearType::CurrentLine))?;
     execute!(io::stdout(), Clear(ClearType::FromCursorUp))?;
+    execute!(io::stdout(), Clear(ClearType::FromCursorDown))?;
 
     io::stdout().flush()?;
     Ok(())
