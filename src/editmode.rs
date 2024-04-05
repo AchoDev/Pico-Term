@@ -1,6 +1,17 @@
+use std::io;
+
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub fn handle_key_event(key_event: KeyEvent) -> io::Result<()> {
+use crate::{functions::clear, move_down, move_left, move_right, move_up, Mode};
+
+pub fn handle_key_event(
+    key_event: KeyEvent,
+    current_line: &mut usize,
+    current_char: &mut usize,
+    current_mode: &mut Mode,
+    lines: &mut Vec<String>,
+) -> io::Result<bool> {
+    let mut changed_line = true;
     match key_event.code {
         KeyCode::Char(c) => match c {
             'i' => match key_event.modifiers {
@@ -27,6 +38,7 @@ pub fn handle_key_event(key_event: KeyEvent) -> io::Result<()> {
                         lines[*current_line] = next_line;
                         lines[*current_line + 1] = cursor_line;
                         *current_line += 1;
+
                         clear()?;
                     }
                 }
@@ -39,10 +51,12 @@ pub fn handle_key_event(key_event: KeyEvent) -> io::Result<()> {
                     _ => false,
                 };
 
+                changed_line = true;
+
                 move_right(&mut *current_char, &*current_line, &lines, whole_word)?;
             }
 
-            'j' => move_left(&mut *current_char, &*current_line, &mut lines, false)?,
+            'j' => move_left(&mut *current_char, &*current_line, lines, false)?,
 
             'u' => {
                 *current_char = 0;
@@ -57,7 +71,10 @@ pub fn handle_key_event(key_event: KeyEvent) -> io::Result<()> {
                 *current_mode = Mode::WriteMode;
                 clear()?;
             }
-            _ => {}
+            _ => changed_line = false,
         },
+        _ => {}
     }
+
+    Ok(changed_line)
 }

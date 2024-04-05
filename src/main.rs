@@ -10,16 +10,16 @@ use std::fs::read_to_string;
 use std::io::{self, Write};
 
 mod console;
+mod editmode;
 mod functions;
 mod menu;
 mod writemode;
-mod editmode;
 
 use console::{Console, ConsoleAction};
 use functions::*;
 use menu::Menu;
 
-enum Mode {
+pub enum Mode {
     WriteMode,
     EditMode,
     MenuMode,
@@ -149,7 +149,13 @@ fn main() -> io::Result<()> {
                         )?;
                     }
                     Mode::EditMode => {
-                        
+                        changed_line = editmode::handle_key_event(
+                            key_event,
+                            &mut current_line,
+                            &mut current_char,
+                            &mut current_mode,
+                            &mut lines,
+                        )?
                     }
                 }
 
