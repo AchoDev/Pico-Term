@@ -10,6 +10,7 @@ pub fn handle_key_event(
     info_text: &mut String,
     current_line: &mut usize,
     current_char: &mut usize,
+    current_scroll: &mut usize,
     lines: &mut Vec<String>,
     initial: bool,
 ) -> io::Result<bool> {
@@ -43,6 +44,10 @@ pub fn handle_key_event(
                     .to_string();
 
                 lines[*current_line - 1] = lines[*current_line - 1][0..*current_char].to_string();
+            }
+
+            if *current_line > lines.len() - 1 {
+                *current_scroll += 1;
             }
 
             *current_char = 0;

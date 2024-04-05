@@ -56,6 +56,7 @@ fn main() -> io::Result<()> {
 
     let mut current_line: usize = 0;
     let mut current_char: usize = 0;
+    let mut current_scroll: usize = 0;
 
     let mut menu = Menu::new();
     let mut console = Console::new();
@@ -144,6 +145,7 @@ fn main() -> io::Result<()> {
                             &mut info_text,
                             &mut current_line,
                             &mut current_char,
+                            &mut current_scroll,
                             &mut lines,
                             initial,
                         )?;
@@ -178,6 +180,7 @@ fn main() -> io::Result<()> {
             &(term_size.1 as usize),
             &current_line,
             &current_char,
+            &current_scroll,
             &info_text,
             &file_name,
         );
@@ -210,6 +213,7 @@ fn draw_skeleton(
     height: &usize,
     current_line: &usize,
     current_char: &usize,
+    current_scroll: &usize,
     info_text: &String,
     file_name: &String,
 ) {
@@ -247,6 +251,7 @@ fn draw_skeleton(
             line = String::new();
             written_line = false;
         }
+        // strings before and after cursor (char variable)
         let start: &str;
         let mut end: &str = "";
 
@@ -260,7 +265,7 @@ fn draw_skeleton(
         }
 
         if written_line {
-            print!("{}", (i + 1).to_string().dark_grey());
+            print!("{}", (i + 1 + current_scroll).to_string().dark_grey());
         } else {
             print!("    ");
         }
