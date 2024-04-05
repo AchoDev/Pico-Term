@@ -146,6 +146,7 @@ fn main() -> io::Result<()> {
                             &mut current_line,
                             &mut current_char,
                             &mut current_scroll,
+                            editor_height: 
                             &mut lines,
                             initial,
                         )?;
@@ -234,7 +235,7 @@ fn draw_skeleton(
     print!("{}", "----| ".dark_grey());
     println!("{}", file_name.clone().dark_grey());
 
-    let editor_height = height - 9;
+    let editor_height = calculate_editor_height(height);
     let loop_count = if lines.len() > editor_height {
         editor_height + 1
     } else {
@@ -295,7 +296,7 @@ fn draw_skeleton(
         println!("{}", "----|".dark_grey());
     } else if editor_height < lines.len() - 1 {
         print!("{}  ", lines.len());
-        println!("{}  ", editor_height);
+        println!("{}  ", current_scroll);
 
         // println!(
         //     "{} {} {}",
@@ -317,4 +318,8 @@ fn draw_skeleton(
         // println!("{}", "Press F1 to enter Menu Mode".blue());
         print!("{}", " Exit Pico: ESC".blue());
     }
+}
+
+fn calculate_editor_height(current_height: &usize) -> usize {
+    return current_height - 9
 }

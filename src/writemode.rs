@@ -11,6 +11,7 @@ pub fn handle_key_event(
     current_line: &mut usize,
     current_char: &mut usize,
     current_scroll: &mut usize,
+    editor_height: &usize,
     lines: &mut Vec<String>,
     initial: bool,
 ) -> io::Result<bool> {
