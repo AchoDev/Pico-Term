@@ -1,6 +1,11 @@
 use std::io;
 
-use crossterm::{cursor::MoveTo, execute, style::Stylize};
+use crossterm::{
+    cursor::MoveTo,
+    event::{KeyCode, KeyEvent},
+    execute,
+    style::Stylize,
+};
 
 pub struct Menu<'a> {
     menu_item: usize,
@@ -83,6 +88,19 @@ impl<'a> Menu<'a> {
         }
 
         return Ok(start_pos);
+    }
+
+    pub fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<bool> {
+        let mut changed_line = true;
+        match key_event.code {
+            KeyCode::Up => self.move_up(),
+            KeyCode::Down => self.move_down(),
+            KeyCode::Right => self.move_right(),
+            KeyCode::Left => self.move_left(),
+            _ => changed_line = false,
+        }
+
+        Ok(changed_line)
     }
 
     pub fn draw(&mut self) -> io::Result<()> {

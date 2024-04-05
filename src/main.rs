@@ -137,7 +137,7 @@ fn main() -> io::Result<()> {
 
                 match current_mode {
                     Mode::ConsoleMode => {}
-                    Mode::MenuMode => {}
+                    Mode::MenuMode => changed_line = menu.handle_key_event(key_event)?,
                     Mode::WriteMode => {
                         changed_line = writemode::handle_key_event(
                             key_event,
@@ -230,7 +230,14 @@ fn draw_skeleton(
     print!("{}", "----| ".dark_grey());
     println!("{}", file_name.clone().dark_grey());
 
-    for i in 0..height - 9 {
+    let editor_height = height - 9;
+    let loop_count = if lines.len() > editor_height {
+        editor_height + 1
+    } else {
+        editor_height
+    };
+
+    for i in 0..loop_count {
         let line;
         let written_line;
         if i < lines.len() {
@@ -279,7 +286,20 @@ fn draw_skeleton(
         println!("");
     }
 
-    println!("{}", "----|".dark_grey());
+    if editor_height >= lines.len() {
+        println!("{}", "----|".dark_grey());
+    } else if editor_height < lines.len() - 1 {
+        print!("{}  ", lines.len());
+        println!("{}  ", editor_height);
+
+        // println!(
+        //     "{} {} {}",
+        //     "v".dark_grey(),
+        //     (lines.len() - editor_height).to_string().dark_grey(),
+        //     "lines below".dark_grey()
+        // );
+    }
+
     println!("\nLine: {} Char: {}", current_line + 1, current_char);
     print!("{}", info_text.clone().on_white());
     if matches!(*mode, Mode::EditMode) {
