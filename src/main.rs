@@ -1,5 +1,7 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
-use crossterm::event::{read, Event, KeyCode, KeyEventKind, KeyModifiers};
+use crossterm::event::{
+    read, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEvent, MouseEventKind,
+};
 use crossterm::execute;
 use crossterm::style::Stylize;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
@@ -108,6 +110,23 @@ fn main() -> io::Result<()> {
                 changed_line = true;
                 clear()?;
             }
+            if let Event::Mouse(mouse_event) = event {
+                match mouse_event.kind {
+                    MouseEventKind::ScrollDown => {
+                        if current_scroll + calculate_editor_height(&(term_size.0 as usize))
+                            < lines.len()
+                        {
+                            current_scroll += 1;
+                        }
+                    }
+                    MouseEventKind::ScrollUp => {
+                        if current_scroll > 0 {
+                            current_scroll -= 1
+                        }
+                    }
+                    _ => {}
+                }
+            }
             if let Event::Key(key_event) = event {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
@@ -146,7 +165,7 @@ fn main() -> io::Result<()> {
                             &mut current_line,
                             &mut current_char,
                             &mut current_scroll,
-                            editor_height: 
+                            &calculate_editor_height(&(term_size.1 as usize)),
                             &mut lines,
                             initial,
                         )?;
@@ -242,7 +261,7 @@ fn draw_skeleton(
         editor_height
     };
 
-    for i in 0..loop_count {
+    for i in *current_scroll..loop_count + current_scroll {
         let line;
         let written_line;
         if i < lines.len() {
@@ -266,7 +285,7 @@ fn draw_skeleton(
         }
 
         if written_line {
-            print!("{}", (i + 1 + current_scroll).to_string().dark_grey());
+            print!("{}", (i + 1).to_string().dark_grey());
         } else {
             print!("    ");
         }
@@ -321,5 +340,5 @@ fn draw_skeleton(
 }
 
 fn calculate_editor_height(current_height: &usize) -> usize {
-    return current_height - 9
+    return current_height - 9;
 }

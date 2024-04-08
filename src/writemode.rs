@@ -47,7 +47,7 @@ pub fn handle_key_event(
                 lines[*current_line - 1] = lines[*current_line - 1][0..*current_char].to_string();
             }
 
-            if *current_line > lines.len() - 1 {
+            if *current_line > editor_height - 1 {
                 *current_scroll += 1;
             }
 
