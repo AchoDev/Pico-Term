@@ -1,6 +1,7 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::{
-    read, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEvent, MouseEventKind,
+    read, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEvent,
+    MouseEventKind,
 };
 use crossterm::execute;
 use crossterm::style::Stylize;
@@ -78,6 +79,8 @@ fn main() -> io::Result<()> {
     };
 
     execute!(io::stdout(), MoveTo(0, 0))?;
+    execute!(io::stdout(), EnableMouseCapture)?;
+
     loop {
         let mut changed_line = false;
 
@@ -113,15 +116,19 @@ fn main() -> io::Result<()> {
             if let Event::Mouse(mouse_event) = event {
                 match mouse_event.kind {
                     MouseEventKind::ScrollDown => {
-                        if current_scroll + calculate_editor_height(&(term_size.0 as usize))
+                        if current_scroll + calculate_editor_height(&(term_size.1 as usize))
                             < lines.len()
                         {
                             current_scroll += 1;
+                            changed_line = true;
+                            clear()?;
                         }
                     }
                     MouseEventKind::ScrollUp => {
                         if current_scroll > 0 {
-                            current_scroll -= 1
+                            current_scroll -= 1;
+                            changed_line = true;
+                            clear()?;
                         }
                     }
                     _ => {}
@@ -131,6 +138,8 @@ fn main() -> io::Result<()> {
                 if key_event.kind != KeyEventKind::Press && !initial {
                     continue;
                 }
+
+                let mut block_event = false;
 
                 match key_event.code {
                     KeyCode::Esc => {
@@ -150,34 +159,43 @@ fn main() -> io::Result<()> {
                             }
                         }
                     }
+                    KeyCode::Char('s') => {
+                        if key_event.modifiers == KeyModifiers::CONTROL {
+                            info_text = save_file_as(&lines, &file_name)?;
+                            block_event = true;
+                            changed_line = true;
+                        }
+                    }
                     _ => {}
                 }
 
                 if key_event.code == KeyCode::Esc {}
 
-                match current_mode {
-                    Mode::ConsoleMode => {}
-                    Mode::MenuMode => changed_line = menu.handle_key_event(key_event)?,
-                    Mode::WriteMode => {
-                        changed_line = writemode::handle_key_event(
-                            key_event,
-                            &mut info_text,
-                            &mut current_line,
-                            &mut current_char,
-                            &mut current_scroll,
-                            &calculate_editor_height(&(term_size.1 as usize)),
-                            &mut lines,
-                            initial,
-                        )?;
-                    }
-                    Mode::EditMode => {
-                        changed_line = editmode::handle_key_event(
-                            key_event,
-                            &mut current_line,
-                            &mut current_char,
-                            &mut current_mode,
-                            &mut lines,
-                        )?
+                if !block_event {
+                    match current_mode {
+                        Mode::ConsoleMode => {}
+                        Mode::MenuMode => changed_line = menu.handle_key_event(key_event)?,
+                        Mode::WriteMode => {
+                            changed_line = writemode::handle_key_event(
+                                key_event,
+                                &mut info_text,
+                                &mut current_line,
+                                &mut current_char,
+                                &mut current_scroll,
+                                &calculate_editor_height(&(term_size.1 as usize)),
+                                &mut lines,
+                                initial,
+                            )?;
+                        }
+                        Mode::EditMode => {
+                            changed_line = editmode::handle_key_event(
+                                key_event,
+                                &mut current_line,
+                                &mut current_char,
+                                &mut current_mode,
+                                &mut lines,
+                            )?
+                        }
                     }
                 }
 
@@ -315,7 +333,8 @@ fn draw_skeleton(
         println!("{}", "----|".dark_grey());
     } else if editor_height < lines.len() - 1 {
         print!("{}  ", lines.len());
-        println!("{}  ", current_scroll);
+        // println!("{}  ", current_scroll);
+        println!("{}", current_scroll + calculate_editor_height(&height));
 
         // println!(
         //     "{} {} {}",
