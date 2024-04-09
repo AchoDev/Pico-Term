@@ -1,6 +1,6 @@
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::{
-    read, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers, MouseEvent,
+    read, EnableMouseCapture, Event, KeyCode, KeyEventKind, KeyModifiers, MouseButton, MouseEvent,
     MouseEventKind,
 };
 use crossterm::execute;
@@ -130,6 +130,12 @@ fn main() -> io::Result<()> {
                             changed_line = true;
                             clear()?;
                         }
+                    }
+                    MouseEventKind::Moved => {
+                        lines[0] = String::from("hover x: ") + &mouse_event.column.to_string();
+                        lines[1] = String::from("hover y: ") + &mouse_event.row.to_string();
+                        changed_line = true;
+                        clear()?;
                     }
                     _ => {}
                 }
@@ -269,8 +275,15 @@ fn draw_skeleton(
     }
 
     println!("{}", "Pico - AchoDev".dark_blue());
-    print!("{}", "----| ".dark_grey());
-    println!("{}", file_name.clone().dark_grey());
+
+    if *current_scroll > 0 {
+        print!("{}", "----| ".dark_grey());
+    } else {
+        print!("{}", "      ".dark_grey());
+        print!("{}", file_name.clone().dark_grey());
+    }
+
+    print!("\n");
 
     let editor_height = calculate_editor_height(height);
     let loop_count = if lines.len() > editor_height {
@@ -332,9 +345,9 @@ fn draw_skeleton(
     if editor_height >= lines.len() {
         println!("{}", "----|".dark_grey());
     } else if editor_height < lines.len() - 1 {
-        print!("{}  ", lines.len());
+        // print!("{}  ", lines.len());
         // println!("{}  ", current_scroll);
-        println!("{}", current_scroll + calculate_editor_height(&height));
+        // println!("{}", current_scroll + calculate_editor_height(&height));
 
         // println!(
         //     "{} {} {}",
