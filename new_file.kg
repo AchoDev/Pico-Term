@@ -1,6 +1,7 @@
 
-
-
 func hello() {
 	log "hello world!"
 }
+
+hello()
+

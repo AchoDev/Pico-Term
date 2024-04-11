@@ -20,11 +20,17 @@ pub fn handle_key_event(
     match key_event.code {
         KeyCode::Down => {
             *info_text = String::new();
-            move_down(current_line, current_char, lines)?;
+            move_down(
+                current_line,
+                current_char,
+                current_scroll,
+                editor_height,
+                lines,
+            )?;
         }
         KeyCode::Up => {
             *info_text = String::new();
-            move_up(current_line, current_char, lines)?;
+            move_up(current_line, current_char, current_scroll, lines)?;
         }
         KeyCode::Right => {
             *info_text = String::new();

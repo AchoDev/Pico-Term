@@ -8,6 +8,8 @@ pub fn handle_key_event(
     key_event: KeyEvent,
     current_line: &mut usize,
     current_char: &mut usize,
+    current_scroll: &mut usize,
+    editor_height: &usize,
     current_mode: &mut Mode,
     lines: &mut Vec<String>,
 ) -> io::Result<bool> {
@@ -27,7 +29,7 @@ pub fn handle_key_event(
                         clear()?;
                     }
                 }
-                _ => move_up(&mut *current_line, &mut *current_char, &lines)?,
+                _ => move_up(current_line, current_char, current_scroll, &lines)?,
             },
             'k' => match key_event.modifiers {
                 KeyModifiers::ALT => {
@@ -43,7 +45,13 @@ pub fn handle_key_event(
                     }
                 }
 
-                _ => move_down(&mut *current_line, &mut *current_char, &lines)?,
+                _ => move_down(
+                    current_line,
+                    current_char,
+                    current_scroll,
+                    editor_height,
+                    &lines,
+                )?,
             },
             'l' => {
                 let whole_word: bool = match key_event.modifiers {

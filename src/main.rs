@@ -131,12 +131,12 @@ fn main() -> io::Result<()> {
                             clear()?;
                         }
                     }
-                    MouseEventKind::Moved => {
-                        lines[0] = String::from("hover x: ") + &mouse_event.column.to_string();
-                        lines[1] = String::from("hover y: ") + &mouse_event.row.to_string();
-                        changed_line = true;
-                        clear()?;
-                    }
+                    // MouseEventKind::Moved => {
+                    //     lines[0] = String::from("hover x: ") + &mouse_event.column.to_string();
+                    //     lines[1] = String::from("hover y: ") + &mouse_event.row.to_string();
+                    //     changed_line = true;
+                    //     clear()?;
+                    // }
                     _ => {}
                 }
             }
@@ -198,6 +198,8 @@ fn main() -> io::Result<()> {
                                 key_event,
                                 &mut current_line,
                                 &mut current_char,
+                                &mut current_scroll,
+                                &(term_size.1 as usize),
                                 &mut current_mode,
                                 &mut lines,
                             )?
@@ -357,7 +359,12 @@ fn draw_skeleton(
         // );
     }
 
-    println!("\nLine: {} Char: {}", current_line + 1, current_char);
+    println!(
+        "\nLine: {} Char: {} Scroll: {}",
+        current_line + 1,
+        current_char,
+        current_scroll
+    );
     print!("{}", info_text.clone().on_white());
     if matches!(*mode, Mode::EditMode) {
         println!("\n{}", "EDIT MODE".on_dark_green());
@@ -369,8 +376,4 @@ fn draw_skeleton(
         // println!("{}", "Press F1 to enter Menu Mode".blue());
         print!("{}", " Exit Pico: ESC".blue());
     }
-}
-
-fn calculate_editor_height(current_height: &usize) -> usize {
-    return current_height - 9;
 }
