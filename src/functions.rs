@@ -38,6 +38,18 @@ pub fn move_down(
     editor_height: &usize,
     lines: &Vec<String>,
 ) -> io::Result<()> {
+    // fn jump_to_editor_point(current_line: &mut usize, current_scroll: &mut usize, editor_height: &usize) {
+    //     if(current_line > current_scroll + editor_height) {
+    //         *current_scroll =
+    //     }
+    // }
+
+    let jump_to_editor_point = || {
+        if current_line > current_scroll + editor_height {
+            *current_scroll
+        }
+    };
+
     if *current_line == lines.len() - 1 {
         *current_scroll = lines.len() - editor_height;
         return Ok(());
