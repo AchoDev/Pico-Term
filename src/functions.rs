@@ -39,13 +39,13 @@ pub fn move_down(
     lines: &Vec<String>,
 ) -> io::Result<()> {
     if *current_line == lines.len() - 1 {
-        *current_scroll = lines.len() - 1 - calculate_editor_height(editor_height);
+        *current_scroll = lines.len() - editor_height;
         return Ok(());
     }
 
     *current_line += 1;
 
-    if *current_line >= (*current_scroll + calculate_editor_height(editor_height)) {
+    if *current_line >= (*current_scroll + editor_height) {
         *current_scroll += 1;
     }
 
