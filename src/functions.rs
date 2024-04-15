@@ -1,4 +1,8 @@
-use std::io::{self, Write};
+use core::num;
+use std::{
+    borrow::Borrow,
+    io::{self, Write},
+};
 
 use crossterm::{
     cursor::MoveTo,
@@ -31,6 +35,28 @@ pub fn clear() -> io::Result<()> {
     Ok(())
 }
 
+pub fn clamp(num: usize, min: usize, max: usize) -> usize {
+    if num > max {
+        max
+    } else if num < min {
+        min
+    } else {
+        num
+    }
+}
+
+pub fn jump_to_editor_point(
+    current_line: &mut usize,
+    current_scroll: &mut usize,
+    editor_height: &usize,
+) {
+    if *current_line > *current_scroll + *editor_height {
+        *current_scroll = *current_line - *editor_height;
+    } else if *current_line < *current_scroll {
+        *current_scroll = *current_line;
+    }
+}
+
 pub fn move_down(
     current_line: &mut usize,
     current_char: &mut usize,
@@ -38,28 +64,13 @@ pub fn move_down(
     editor_height: &usize,
     lines: &Vec<String>,
 ) -> io::Result<()> {
-    // fn jump_to_editor_point(current_line: &mut usize, current_scroll: &mut usize, editor_height: &usize) {
-    //     if(current_line > current_scroll + editor_height) {
-    //         *current_scroll =
-    //     }
-    // }
-
-    let jump_to_editor_point = || {
-        if current_line > current_scroll + editor_height {
-            *current_scroll
-        }
-    };
-
     if *current_line == lines.len() - 1 {
-        *current_scroll = lines.len() - editor_height;
         return Ok(());
     }
 
     *current_line += 1;
 
-    if *current_line >= (*current_scroll + editor_height) {
-        *current_scroll += 1;
-    }
+    jump_to_editor_point(current_line, current_scroll, editor_height);
 
     if *current_char >= lines[*current_line].len() {
         *current_char = lines[*current_line].len()

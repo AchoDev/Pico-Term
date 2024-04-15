@@ -224,6 +224,7 @@ fn main() -> io::Result<()> {
             &lines,
             &current_mode,
             &(term_size.1 as usize),
+            &(term_size.0 as usize),
             &current_line,
             &current_char,
             &current_scroll,
@@ -244,6 +245,7 @@ fn main() -> io::Result<()> {
                 menu.draw_header()?;
             }
         }
+        menu.draw_sidebar();
 
         io::stdout().flush()?;
     }
@@ -257,6 +259,7 @@ fn draw_skeleton(
     lines: &Vec<String>,
     mode: &Mode,
     height: &usize,
+    width: &usize,
     current_line: &usize,
     current_char: &usize,
     current_scroll: &usize,
@@ -276,7 +279,7 @@ fn draw_skeleton(
         char = char.white().on_dark_green();
     }
 
-    println!("{}", "Pico - AchoDev".dark_blue());
+    // println!("{}", "Pico - AchoDev".dark_blue());
 
     if *current_scroll > 0 {
         print!("{}", "----| ".dark_grey());
@@ -287,7 +290,17 @@ fn draw_skeleton(
 
     print!("\n");
 
+    print!("       ");
+    print!("{}", "╭".dark_grey());
+    for _ in 0..width - 14 {
+        print!("{}", "─".dark_grey())
+    }
+    print!("{}", "╮".dark_grey());
+
+    print!("\n");
+
     let editor_height = calculate_editor_height(height);
+
     let loop_count = if lines.len() > editor_height {
         editor_height + 1
     } else {
@@ -295,6 +308,8 @@ fn draw_skeleton(
     };
 
     for i in *current_scroll..loop_count + current_scroll {
+        print!("        ");
+
         let line;
         let written_line;
         if i < lines.len() {
@@ -332,7 +347,7 @@ fn draw_skeleton(
             }
         }
 
-        print!("{}", "| ".dark_grey());
+        print!("{}", "│ ".dark_grey());
         print!("{}", start);
 
         if *current_line == i {
@@ -377,3 +392,6 @@ fn draw_skeleton(
         print!("{}", " Exit Pico: ESC".blue());
     }
 }
+
+// TODO implement this
+fn draw_border(start_x: usize, width: &usize, height: &usize) {}

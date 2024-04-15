@@ -2,7 +2,7 @@ use std::io;
 
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{functions::clear, move_down, move_left, move_right, move_up};
+use crate::{functions::clear, jump_to_editor_point, move_down, move_left, move_right, move_up};
 
 // handle key event for write mode
 pub fn handle_key_event(
@@ -53,11 +53,10 @@ pub fn handle_key_event(
                 lines[*current_line - 1] = lines[*current_line - 1][0..*current_char].to_string();
             }
 
-            if *current_line > editor_height - 1 {
-                *current_scroll += 1;
-            }
+            jump_to_editor_point(current_line, current_scroll, editor_height);
 
             *current_char = 0;
+
             clear()?;
             if initial {
                 lines.remove(0);
@@ -114,6 +113,7 @@ pub fn handle_key_event(
             }
             *current_char -= 1;
             changed_line = true;
+            jump_to_editor_point(current_line, current_scroll, editor_height);
             clear()?;
             // execute!(
             //     io::stdout(),

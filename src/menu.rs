@@ -4,7 +4,7 @@ use crossterm::{
     cursor::MoveTo,
     event::{KeyCode, KeyEvent},
     execute,
-    style::Stylize,
+    style::{Color, Stylize},
 };
 
 pub struct Menu<'a> {
@@ -71,6 +71,21 @@ impl<'a> Menu<'a> {
     pub fn draw_header(&mut self) -> io::Result<usize> {
         let mut start_pos = 0;
 
+        print!(
+            "{}",
+            "Pico-Term  │  File  Edit  Settings"
+                .on(Color::Rgb {
+                    r: 30,
+                    g: 30,
+                    b: 40
+                })
+                .dark_grey()
+        );
+
+        start_pos += 11;
+
+        return Ok(1);
+
         for i in 0..self.titles.len() {
             if i == self.menu_option {
                 print!("{}", self.titles[i].on_white());
@@ -88,6 +103,43 @@ impl<'a> Menu<'a> {
         }
 
         return Ok(start_pos);
+    }
+
+    pub fn draw_sidebar(&mut self) {
+        let icons = ["E", "S", "B"];
+
+        for i in 0..icons.len() {
+            println!(
+                "{}",
+                "       "
+                    .on(Color::Rgb {
+                        r: 30,
+                        g: 30,
+                        b: 40
+                    })
+                    .dark_grey()
+            );
+            println!(
+                "{}",
+                (String::from("   ") + icons[i] + "   ")
+                    .on(Color::Rgb {
+                        r: 30,
+                        g: 30,
+                        b: 40
+                    })
+                    .dark_grey()
+            );
+            println!(
+                "{}",
+                "       "
+                    .on(Color::Rgb {
+                        r: 30,
+                        g: 30,
+                        b: 40
+                    })
+                    .dark_grey()
+            );
+        }
     }
 
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<bool> {
