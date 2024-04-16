@@ -105,43 +105,6 @@ impl<'a> Menu<'a> {
         return Ok(start_pos);
     }
 
-    pub fn draw_sidebar(&mut self) {
-        let icons = ["E", "S", "B"];
-
-        for i in 0..icons.len() {
-            println!(
-                "{}",
-                "       "
-                    .on(Color::Rgb {
-                        r: 30,
-                        g: 30,
-                        b: 40
-                    })
-                    .dark_grey()
-            );
-            println!(
-                "{}",
-                (String::from("   ") + icons[i] + "   ")
-                    .on(Color::Rgb {
-                        r: 30,
-                        g: 30,
-                        b: 40
-                    })
-                    .dark_grey()
-            );
-            println!(
-                "{}",
-                "       "
-                    .on(Color::Rgb {
-                        r: 30,
-                        g: 30,
-                        b: 40
-                    })
-                    .dark_grey()
-            );
-        }
-    }
-
     pub fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<bool> {
         let mut changed_line = true;
         match key_event.code {

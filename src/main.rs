@@ -245,7 +245,6 @@ fn main() -> io::Result<()> {
                 menu.draw_header()?;
             }
         }
-        menu.draw_sidebar();
 
         io::stdout().flush()?;
     }
@@ -290,13 +289,6 @@ fn draw_skeleton(
 
     print!("\n");
 
-    print!("       ");
-    print!("{}", "╭".dark_grey());
-    for _ in 0..width - 14 {
-        print!("{}", "─".dark_grey())
-    }
-    print!("{}", "╮".dark_grey());
-
     print!("\n");
 
     let editor_height = calculate_editor_height(height);
@@ -308,7 +300,7 @@ fn draw_skeleton(
     };
 
     for i in *current_scroll..loop_count + current_scroll {
-        print!("        ");
+        // print!("        ");
 
         let line;
         let written_line;
