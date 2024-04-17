@@ -16,6 +16,7 @@ mod console;
 mod editmode;
 mod functions;
 mod menu;
+mod skeleton;
 mod writemode;
 
 use console::{Console, ConsoleAction};
@@ -220,6 +221,8 @@ fn main() -> io::Result<()> {
 
         initial = false;
 
+        skeleton::draw_skeleton(term_size.0 as usize, term_size.1 as usize)?;
+        move_to(0, 0);
         draw_skeleton(
             &lines,
             &current_mode,
@@ -312,16 +315,20 @@ fn draw_skeleton(
             written_line = false;
         }
         // strings before and after cursor (char variable)
-        let start: &str;
-        let mut end: &str = "";
+        let mut start = String::new();
+        let mut end = String::new();
+
+        let line_chars: Vec<char> = line.chars().collect();
 
         if *current_line == i as usize {
-            start = &line[0..*current_char];
+            start = line_chars[0..*current_char].iter().collect();
             if current_char < &line.len() {
-                end = &line[current_char + 1..line.len()];
+                end = line_chars[current_char + 1..line_chars.len()]
+                    .iter()
+                    .collect::<String>();
             }
         } else {
-            start = &line
+            start = line.clone();
         }
 
         if written_line {
@@ -384,6 +391,3 @@ fn draw_skeleton(
         print!("{}", " Exit Pico: ESC".blue());
     }
 }
-
-// TODO implement this
-fn draw_border(start_x: usize, width: &usize, height: &usize) {}

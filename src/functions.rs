@@ -7,6 +7,7 @@ use std::{
 use crossterm::{
     cursor::MoveTo,
     execute,
+    style::{Color, StyledContent, Stylize},
     terminal::{Clear, ClearType},
 };
 
@@ -43,6 +44,14 @@ pub fn clamp(num: usize, min: usize, max: usize) -> usize {
     } else {
         num
     }
+}
+
+pub fn on_main_background(text: &str) -> StyledContent<&str> {
+    return text.on(Color::Rgb {
+        r: 30,
+        g: 30,
+        b: 40,
+    });
 }
 
 pub fn jump_to_editor_point(
