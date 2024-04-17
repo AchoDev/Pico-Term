@@ -16,7 +16,7 @@ pub fn move_to(x: u16, y: u16) -> io::Result<()> {
 }
 
 pub fn calculate_editor_height(current_height: &usize) -> usize {
-    return current_height - 5;
+    return current_height - 2;
 }
 
 pub fn purge() -> io::Result<()> {
@@ -48,17 +48,17 @@ pub fn clamp(num: usize, min: usize, max: usize) -> usize {
 
 pub fn on_main(text: &str) -> StyledContent<&str> {
     return text.on(Color::Rgb {
-        r: 30,
-        g: 30,
-        b: 40,
+        r: 35,
+        g: 35,
+        b: 45,
     });
 }
 
 pub fn on_secondary(text: &str) -> StyledContent<&str> {
     return text.on(Color::Rgb {
-        r: 60,
-        g: 60,
-        b: 80,
+        r: 47,
+        g: 47,
+        b: 56,
     });
 }
 

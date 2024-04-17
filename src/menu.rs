@@ -7,6 +7,8 @@ use crossterm::{
     style::{Color, Stylize},
 };
 
+use crate::on_main;
+
 pub struct Menu<'a> {
     menu_item: usize,
     menu_option: usize,
@@ -71,16 +73,8 @@ impl<'a> Menu<'a> {
     pub fn draw_header(&mut self) -> io::Result<usize> {
         let mut start_pos = 0;
 
-        print!(
-            "{}",
-            "Pico-Term  │  File  Edit  Settings"
-                .on(Color::Rgb {
-                    r: 30,
-                    g: 30,
-                    b: 40
-                })
-                .dark_grey()
-        );
+        print!("{}", on_main("Pico-Term").blue());
+        print!("{}", on_main("  │  File  Edit  Settings").dark_grey());
 
         start_pos += 11;
 

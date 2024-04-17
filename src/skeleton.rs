@@ -40,6 +40,7 @@ pub fn draw_skeleton(
         }
     }
 
+    print!("{}", on_main(" "));
     print!("{}", mode_status);
     print!("{}", on_main(" "));
     print!("{}", on_main(help_text).dark_grey());
@@ -47,7 +48,7 @@ pub fn draw_skeleton(
         "{}",
         on_main(&str::repeat(
             " ",
-            spacer_len - help_text.len() - line_info.len() - 1
+            spacer_len - help_text.len() - line_info.len() - 2
         ))
     );
 

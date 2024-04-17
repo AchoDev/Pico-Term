@@ -1,18 +1,6 @@
- Pico-Term │ File  Edit  Settings
 
-        new_file.txt  | test.kg | main.py
-─────╮   
- Exp │  1   │
-     │  2   │
-─────╮  3   │ random text
-Src    4   │
-        5   │
-        6   │
- Git    7   │
-        8   │
-        9   │
-      
-      
-      
-WRITE MODE Alt+J for Edit mode                                         Ln: 11 Ch: 0 | Spaces: 4 | Plain Text
+
+
+
+
 

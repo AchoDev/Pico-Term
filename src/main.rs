@@ -276,40 +276,26 @@ fn draw_editor(
     file_name: &String,
 ) {
     let mut char = match *current_char == lines[*current_line].len() {
-        true => ' '.on_white(),
+        true => ' '.on_white().slow_blink(),
         false => lines[*current_line]
             .chars()
             .nth(*current_char)
             .unwrap()
-            .on_white(),
+            .on_white()
+            .slow_blink(),
     };
 
     if matches!(*mode, Mode::EditMode) {
         char = char.white().on_dark_green();
     }
 
-    // println!("{}", "Pico - AchoDev".dark_blue());
-
-    if *current_scroll > 0 {
-        print!("{}", "----| ".dark_grey());
-    } else {
-        print!("{}", "      ".dark_grey());
-        print!("{}", file_name.clone().dark_grey());
-    }
-
-    print!("\n");
+    // print!("\n");
 
     print!("\n");
 
     let editor_height = calculate_editor_height(height);
 
-    let loop_count = if lines.len() > editor_height {
-        editor_height + 1
-    } else {
-        editor_height
-    };
-
-    for i in *current_scroll..loop_count + current_scroll {
+    for i in *current_scroll..editor_height + current_scroll {
         // print!("        ");
 
         let line;
@@ -338,29 +324,41 @@ fn draw_editor(
             start = line.clone();
         }
 
+        let mut line_indicator = String::new();
+        let mut divider = " │ ";
+
         if written_line {
-            print!("{}", (i + 1).to_string().dark_grey());
+            line_indicator.push_str(&str::repeat(" ", 4 - (i + 1).to_string().len()));
+            line_indicator.push_str(&(i + 1).to_string());
         } else {
-            print!("    ");
-        }
-        let mut spacer_length: i16 = 3;
-        spacer_length -= (i + 1).to_string().len() as i16;
-
-        while spacer_length >= 0 {
-            spacer_length -= 1;
-            if written_line {
-                print!(" ");
-            }
+            line_indicator.push_str("    ");
+            divider = "   "
         }
 
-        print!("{}", "│ ".dark_grey());
-        print!("{}", start);
+        print!("{}", on_main(" "));
+
+        if *current_line == i {
+            print!("{}", on_secondary(&line_indicator));
+        } else {
+            print!("{}", on_secondary(&line_indicator).dark_grey());
+        }
+        print!("{}", on_secondary(&divider).dark_grey());
+
+        print!("{}", on_secondary(&start));
 
         if *current_line == i {
             print!("{}", char);
         }
 
-        print!("{}", end);
+        print!("{}", on_secondary(&end));
+        print!(
+            "{}",
+            on_secondary(&str::repeat(" ", width - 9 - start.len() - end.len()))
+        );
+
+        if *current_line != i {
+            print!("{}", on_secondary(" "))
+        }
 
         println!("");
     }
