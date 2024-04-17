@@ -221,9 +221,16 @@ fn main() -> io::Result<()> {
 
         initial = false;
 
-        skeleton::draw_skeleton(term_size.0 as usize, term_size.1 as usize)?;
+        skeleton::draw_skeleton(
+            &(term_size.0 as usize),
+            &(term_size.1 as usize),
+            &current_mode,
+            &current_line,
+            &current_char,
+        )?;
+
         move_to(0, 0);
-        draw_skeleton(
+        draw_editor(
             &lines,
             &current_mode,
             &(term_size.1 as usize),
@@ -257,7 +264,7 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn draw_skeleton(
+fn draw_editor(
     lines: &Vec<String>,
     mode: &Mode,
     height: &usize,
@@ -356,38 +363,5 @@ fn draw_skeleton(
         print!("{}", end);
 
         println!("");
-    }
-
-    if editor_height >= lines.len() {
-        println!("{}", "----|".dark_grey());
-    } else if editor_height < lines.len() - 1 {
-        // print!("{}  ", lines.len());
-        // println!("{}  ", current_scroll);
-        // println!("{}", current_scroll + calculate_editor_height(&height));
-
-        // println!(
-        //     "{} {} {}",
-        //     "v".dark_grey(),
-        //     (lines.len() - editor_height).to_string().dark_grey(),
-        //     "lines below".dark_grey()
-        // );
-    }
-
-    println!(
-        "\nLine: {} Char: {} Scroll: {}",
-        current_line + 1,
-        current_char,
-        current_scroll
-    );
-    print!("{}", info_text.clone().on_white());
-    if matches!(*mode, Mode::EditMode) {
-        println!("\n{}", "EDIT MODE".on_dark_green());
-        print!("{}", "Switch to write mode: Q".dark_green());
-    } else {
-        println!("\n{}", "WRITE MODE".on_blue());
-        print!("{}", "Switch to edit mode: ALT + J ".blue());
-        print!("{}", "|".dark_blue());
-        // println!("{}", "Press F1 to enter Menu Mode".blue());
-        print!("{}", " Exit Pico: ESC".blue());
     }
 }
