@@ -30,7 +30,13 @@ pub fn handle_key_event(
         }
         KeyCode::Up => {
             *info_text = String::new();
-            move_up(current_line, current_char, current_scroll, lines)?;
+            move_up(
+                current_line,
+                current_char,
+                current_scroll,
+                editor_height,
+                lines,
+            )?;
         }
         KeyCode::Right => {
             *info_text = String::new();

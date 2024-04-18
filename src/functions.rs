@@ -16,7 +16,7 @@ pub fn move_to(x: u16, y: u16) -> io::Result<()> {
 }
 
 pub fn calculate_editor_height(current_height: &usize) -> usize {
-    return current_height - 2;
+    return current_height - 4;
 }
 
 pub fn purge() -> io::Result<()> {
@@ -67,10 +67,12 @@ pub fn jump_to_editor_point(
     current_scroll: &mut usize,
     editor_height: &usize,
 ) {
-    if *current_line > *current_scroll + *editor_height {
-        *current_scroll = *current_line - *editor_height;
-    } else if *current_line < *current_scroll {
-        *current_scroll = *current_line;
+    if *current_line + 2 > *current_scroll + *editor_height {
+        *current_scroll = *current_line - (*editor_height - 2);
+    } else if *current_line == 0 {
+        *current_scroll = 0;
+    } else if *current_line < *current_scroll + 1 {
+        *current_scroll = *current_line - 1;
     }
 }
 
@@ -100,6 +102,7 @@ pub fn move_up(
     current_line: &mut usize,
     current_char: &mut usize,
     current_scroll: &mut usize,
+    editor_height: &usize,
     lines: &Vec<String>,
 ) -> io::Result<()> {
     if *current_line == 0 {
@@ -116,6 +119,7 @@ pub fn move_up(
     if *current_char >= lines[*current_line].len() {
         *current_char = lines[*current_line].len()
     }
+    jump_to_editor_point(current_line, current_scroll, editor_height);
     clear()?;
     Ok(())
 }

@@ -29,7 +29,13 @@ pub fn handle_key_event(
                         clear()?;
                     }
                 }
-                _ => move_up(current_line, current_char, current_scroll, &lines)?,
+                _ => move_up(
+                    current_line,
+                    current_char,
+                    current_scroll,
+                    editor_height,
+                    &lines,
+                )?,
             },
             'k' => match key_event.modifiers {
                 KeyModifiers::ALT => {

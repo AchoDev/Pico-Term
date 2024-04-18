@@ -40,7 +40,7 @@ pub fn draw_skeleton(
         }
     }
 
-    print!("{}", on_main(" "));
+    // print!("{}", on_main(" "));
     print!("{}", mode_status);
     print!("{}", on_main(" "));
     print!("{}", on_main(help_text).dark_grey());
@@ -48,11 +48,11 @@ pub fn draw_skeleton(
         "{}",
         on_main(&str::repeat(
             " ",
-            spacer_len - help_text.len() - line_info.len() - 2
+            spacer_len - help_text.len() - line_info.len() - 1 + 4
         ))
     );
 
-    print!("{}", on_main(&line_info));
+    print!("{}", on_main(&line_info).dark_grey());
 
     Ok(())
 }
@@ -63,5 +63,6 @@ fn generate_line_info(current_line: &usize, current_char: &usize) -> String {
     line_info.push_str(&current_line.to_string());
     line_info.push_str(" Ch: ");
     line_info.push_str(&current_char.to_string());
+    line_info.push_str(" │ Spaces: 4 │ Plain Text ");
     return line_info;
 }

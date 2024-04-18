@@ -229,7 +229,7 @@ fn main() -> io::Result<()> {
             &current_char,
         )?;
 
-        move_to(0, 0);
+        move_to(0, 0)?;
         draw_editor(
             &lines,
             &current_mode,
@@ -292,6 +292,11 @@ fn draw_editor(
     // print!("\n");
 
     print!("\n");
+    print!("{}", on_secondary(" "));
+    print!("{}", on_secondary(file_name));
+    print!("{}", on_secondary("  "));
+    print!("\n");
+    print!("{}\n", on_secondary(&str::repeat(" ", *width)));
 
     let editor_height = calculate_editor_height(height);
 
@@ -335,8 +340,6 @@ fn draw_editor(
             divider = "   "
         }
 
-        print!("{}", on_main(" "));
-
         if *current_line == i {
             print!("{}", on_secondary(&line_indicator));
         } else {
@@ -353,7 +356,7 @@ fn draw_editor(
         print!("{}", on_secondary(&end));
         print!(
             "{}",
-            on_secondary(&str::repeat(" ", width - 9 - start.len() - end.len()))
+            on_secondary(&str::repeat(" ", width - 8 - start.len() - end.len()))
         );
 
         if *current_line != i {
