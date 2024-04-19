@@ -151,6 +151,7 @@ fn main() -> io::Result<()> {
                 match key_event.code {
                     KeyCode::Esc => {
                         clear()?;
+                        for_real_clear()?;
                         move_to(0, 0)?;
                         break;
                     }
@@ -213,7 +214,7 @@ fn main() -> io::Result<()> {
         }
 
         move_to(0, 0)?;
-        purge()?;
+        // purge()?;
 
         if !changed_line && !initial {
             continue;

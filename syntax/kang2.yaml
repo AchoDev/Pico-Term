@@ -1,0 +1,13 @@
+filename: kg
+
+rules:
+  - keywords: "\\(func|var|struct|if|elseif|else|static|return|true|false|null)\\b"
+  - specials: "\\b(prompt|log)\\b"
+  - numbers: "\\b[0-9]+\\b"
+  - comments: "//.*$"
+  - strings: "\".*?\""
+  - variable: "\\b\\w+\\b(?=\\s*=)"
+  - funcion: "\\b\\w+\\b(?=\\()"
+  - type: "\\bstruct\\s+(\\w+)"
+  - operators: "(\\+\\+|--|\\+=|-=|\\*=|/=|==|!=|>=|<=|&&|\\|\\||\\+|-|\\*|/|=|>|<|@|&)"
+  - brackets: "[\\[\\]\\(\\)\\{\\}]"
