@@ -1,7 +1,7 @@
 filename: kg
 
 rules:
-  - keywords: "\\(func|var|struct|if|elseif|else|static|return|true|false|null)\\b"
+  - keywords: r"\b(func|var|struct|if|elseif|else|static|return|true|false|null)\b"
   - specials: "\\b(prompt|log)\\b"
   - numbers: "\\b[0-9]+\\b"
   - comments: "//.*$"
