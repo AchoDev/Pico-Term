@@ -35,22 +35,28 @@ pub fn handle_key_event(
         }
         KeyCode::Up => {
             *info_text = String::new();
-            move_up(
+            if move_up(
                 current_line,
                 current_char,
                 current_scroll,
                 editor_height,
                 lines,
-            )?;
+            )? {
+                changed_line = ChangedLineType::Lines(*current_line, *current_line + 1)
+            }
         }
         KeyCode::Right => {
             *info_text = String::new();
-            move_right(current_char, current_line, lines, false)?;
+            if move_right(current_char, current_line, lines, false)? {
+                changed_line = ChangedLineType::Line(*current_line);
+            }
         }
         KeyCode::Left => {
             *info_text = String::new();
 
-            move_left(current_char, current_line, lines, false)?;
+            if move_left(current_char, current_line, lines, false)? {
+                changed_line = ChangedLineType::Line(*current_line);
+            }
         }
         KeyCode::Enter => {
             *current_line += 1;
@@ -72,6 +78,8 @@ pub fn handle_key_event(
             if initial {
                 lines.remove(0);
                 *current_line -= 1;
+            } else {
+                changed_line = ChangedLineType::Lines(*current_line - 1, lines.len() - 1);
             }
         }
 

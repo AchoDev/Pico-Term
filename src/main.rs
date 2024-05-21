@@ -171,7 +171,8 @@ fn main() -> io::Result<()> {
                             match current_mode {
                                 Mode::WriteMode => current_mode = Mode::EditMode,
                                 Mode::EditMode => {
-                                    move_left(&mut current_char, &current_line, &mut lines, true)?
+                                    move_left(&mut current_char, &current_line, &mut lines, true)?;
+                                    ()
                                 }
                                 _ => {}
                             }
@@ -267,6 +268,7 @@ fn main() -> io::Result<()> {
             ChangedLineType::All => {
                 move_to(0, 0)?;
                 draw_skeleton!();
+                move_to(0, 0)?;
                 draw_editor(
                     &lines,
                     &current_mode,
@@ -278,6 +280,7 @@ fn main() -> io::Result<()> {
                     &info_text,
                     &file_name,
                 );
+                move_to(0, 0)?;
                 draw_menu!();
             }
             ChangedLineType::Skeleton => {

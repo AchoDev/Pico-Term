@@ -121,10 +121,10 @@ pub fn move_up(
     current_scroll: &mut usize,
     editor_height: &usize,
     lines: &Vec<String>,
-) -> io::Result<()> {
+) -> io::Result<bool> {
     if *current_line == 0 {
         *current_scroll = 0;
-        return Ok(());
+        return Ok(false);
     }
 
     *current_line -= 1;
@@ -138,7 +138,7 @@ pub fn move_up(
     }
     jump_to_editor_point(current_line, current_scroll, editor_height);
     clear()?;
-    Ok(())
+    Ok(true)
 }
 
 pub fn move_right(
@@ -146,9 +146,9 @@ pub fn move_right(
     current_line: &usize,
     lines: &Vec<String>,
     whole_word: bool,
-) -> io::Result<()> {
+) -> io::Result<bool> {
     if *current_char >= lines[*current_line].len() {
-        return Ok(());
+        return Ok(false);
     }
 
     *current_char += 1;
@@ -167,7 +167,7 @@ pub fn move_right(
     }
 
     clear()?;
-    Ok(())
+    Ok(true)
 }
 
 pub fn move_left(
@@ -175,9 +175,9 @@ pub fn move_left(
     current_line: &usize,
     lines: &mut Vec<String>,
     whole_word: bool,
-) -> io::Result<()> {
+) -> io::Result<bool> {
     if *current_char == 0 {
-        return Ok(());
+        return Ok(false);
     }
 
     *current_char -= 1;
@@ -194,5 +194,5 @@ pub fn move_left(
     }
 
     clear()?;
-    Ok(())
+    Ok(true)
 }

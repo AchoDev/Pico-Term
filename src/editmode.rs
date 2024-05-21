@@ -29,13 +29,16 @@ pub fn handle_key_event(
                         clear()?;
                     }
                 }
-                _ => move_up(
-                    current_line,
-                    current_char,
-                    current_scroll,
-                    editor_height,
-                    &lines,
-                )?,
+                _ => {
+                    move_up(
+                        current_line,
+                        current_char,
+                        current_scroll,
+                        editor_height,
+                        &lines,
+                    )?;
+                    ()
+                }
             },
             'k' => match key_event.modifiers {
                 KeyModifiers::ALT => {
@@ -73,7 +76,10 @@ pub fn handle_key_event(
                 move_right(&mut *current_char, &*current_line, &lines, whole_word)?;
             }
 
-            'j' => move_left(&mut *current_char, &*current_line, lines, false)?,
+            'j' => {
+                move_left(&mut *current_char, &*current_line, lines, false)?;
+                ()
+            }
 
             'u' => {
                 *current_char = 0;
