@@ -2,7 +2,7 @@ use std::io;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::{functions::clear, move_down, move_left, move_right, move_up, Mode};
+use crate::{functions::clear, move_down, move_left, move_right, move_up, ChangedLineType, Mode};
 
 pub fn handle_key_event(
     key_event: KeyEvent,
@@ -12,7 +12,7 @@ pub fn handle_key_event(
     editor_height: &usize,
     current_mode: &mut Mode,
     lines: &mut Vec<String>,
-) -> io::Result<bool> {
+) -> io::Result<ChangedLineType> {
     let mut changed_line = true;
     match key_event.code {
         KeyCode::Char(c) => match c {
@@ -51,13 +51,16 @@ pub fn handle_key_event(
                     }
                 }
 
-                _ => move_down(
-                    current_line,
-                    current_char,
-                    current_scroll,
-                    editor_height,
-                    &lines,
-                )?,
+                _ => {
+                    move_down(
+                        current_line,
+                        current_char,
+                        current_scroll,
+                        editor_height,
+                        &lines,
+                    )?;
+                    ()
+                }
             },
             'l' => {
                 let whole_word: bool = match key_event.modifiers {
@@ -90,5 +93,5 @@ pub fn handle_key_event(
         _ => {}
     }
 
-    Ok(changed_line)
+    Ok(ChangedLineType::All)
 }

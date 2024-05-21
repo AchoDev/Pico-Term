@@ -99,9 +99,9 @@ pub fn move_down(
     current_scroll: &mut usize,
     editor_height: &usize,
     lines: &Vec<String>,
-) -> io::Result<()> {
+) -> io::Result<bool> {
     if *current_line == lines.len() - 1 {
-        return Ok(());
+        return Ok(false);
     }
 
     *current_line += 1;
@@ -112,7 +112,7 @@ pub fn move_down(
         *current_char = lines[*current_line].len()
     }
     clear()?;
-    Ok(())
+    Ok(true)
 }
 
 pub fn move_up(

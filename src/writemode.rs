@@ -2,7 +2,10 @@ use std::io;
 
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{functions::clear, jump_to_editor_point, move_down, move_left, move_right, move_up};
+use crate::{
+    functions::clear, jump_to_editor_point, move_down, move_left, move_right, move_up,
+    ChangedLineType,
+};
 
 // handle key event for write mode
 pub fn handle_key_event(
@@ -14,19 +17,21 @@ pub fn handle_key_event(
     editor_height: &usize,
     lines: &mut Vec<String>,
     initial: bool,
-) -> io::Result<bool> {
-    let mut changed_line = true;
+) -> io::Result<ChangedLineType> {
+    let mut changed_line = ChangedLineType::None;
 
     match key_event.code {
         KeyCode::Down => {
             *info_text = String::new();
-            move_down(
+            if move_down(
                 current_line,
                 current_char,
                 current_scroll,
                 editor_height,
                 lines,
-            )?;
+            )? {
+                changed_line = ChangedLineType::Lines(*current_line - 1, *current_line)
+            }
         }
         KeyCode::Up => {
             *info_text = String::new();
@@ -72,7 +77,7 @@ pub fn handle_key_event(
 
         KeyCode::Tab => {
             *current_char += 4;
-            changed_line = true;
+            changed_line = ChangedLineType::Line(*current_line);
             if *current_char >= lines[*current_line].len() {
                 lines[*current_line].push_str("    ");
             } else {
@@ -87,7 +92,7 @@ pub fn handle_key_event(
             *info_text = String::new();
             clear()?;
             *current_char += 1;
-            changed_line = true;
+            changed_line = ChangedLineType::Line(*current_line);
             if *current_char >= lines[*current_line].len() {
                 lines[*current_line].push(c);
             } else {
@@ -100,7 +105,7 @@ pub fn handle_key_event(
             if *current_char == 0 {
                 *info_text = String::new();
                 if *current_line == 0 {
-                    return Ok(false);
+                    return Ok(ChangedLineType::None);
                 }
 
                 let copied_line = lines[*current_line].clone();
@@ -118,7 +123,7 @@ pub fn handle_key_event(
                     + &lines[*current_line][*current_char..lines[*current_line].len()]
             }
             *current_char -= 1;
-            changed_line = true;
+            changed_line = ChangedLineType::Line(*current_line);
             jump_to_editor_point(current_line, current_scroll, editor_height);
             clear()?;
             // execute!(
@@ -128,10 +133,6 @@ pub fn handle_key_event(
         }
 
         _ => {}
-    }
-
-    if changed_line {
-        *info_text = String::new()
     }
 
     return Ok(changed_line);

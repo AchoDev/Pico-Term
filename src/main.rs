@@ -32,6 +32,14 @@ pub enum Mode {
     ConsoleMode,
 }
 
+pub enum ChangedLineType {
+    None,
+    All,
+    Skeleton,
+    Line(usize),
+    Lines(usize, usize),
+}
+
 fn main() -> io::Result<()> {
     enable_raw_mode()?;
     execute!(io::stdout(), Hide)?;
@@ -85,7 +93,7 @@ fn main() -> io::Result<()> {
     execute!(io::stdout(), EnableMouseCapture)?;
 
     loop {
-        let mut changed_line = false;
+        let mut changed_line = ChangedLineType::None;
 
         if matches!(current_mode, Mode::ConsoleMode) {
             if let Ok(event) = read() {
@@ -113,7 +121,7 @@ fn main() -> io::Result<()> {
             if let Event::Resize(width, height) = event {
                 term_size.0 = width;
                 term_size.1 = height;
-                changed_line = true;
+                changed_line = ChangedLineType::All;
                 clear()?;
             }
             if let Event::Mouse(mouse_event) = event {
@@ -123,14 +131,14 @@ fn main() -> io::Result<()> {
                             < lines.len()
                         {
                             current_scroll += 1;
-                            changed_line = true;
+                            changed_line = ChangedLineType::All;
                             clear()?;
                         }
                     }
                     MouseEventKind::ScrollUp => {
                         if current_scroll > 0 {
                             current_scroll -= 1;
-                            changed_line = true;
+                            changed_line = ChangedLineType::All;
                             clear()?;
                         }
                     }
@@ -173,7 +181,7 @@ fn main() -> io::Result<()> {
                         if key_event.modifiers == KeyModifiers::CONTROL {
                             info_text = save_file_as(&lines, &file_name)?;
                             block_event = true;
-                            changed_line = true;
+                            changed_line = ChangedLineType::Skeleton;
                         }
                     }
                     _ => {}
@@ -218,45 +226,92 @@ fn main() -> io::Result<()> {
         move_to(0, 0)?;
         // purge()?;
 
-        if !changed_line && !initial {
+        if matches!(changed_line, ChangedLineType::None) && !initial {
             continue;
         }
 
-        initial = false;
+        if initial {
+            changed_line = ChangedLineType::All;
+            initial = false;
+        }
 
-        skeleton::draw_skeleton(
-            &(term_size.0 as usize),
-            &(term_size.1 as usize),
-            &current_mode,
-            &current_line,
-            &current_char,
-        )?;
+        macro_rules! draw_skeleton {
+            () => {
+                skeleton::draw_skeleton(
+                    &(term_size.0 as usize),
+                    &(term_size.1 as usize),
+                    &current_mode,
+                    &current_line,
+                    &current_char,
+                )?;
+            };
+        }
 
-        move_to(0, 0)?;
-        draw_editor(
-            &lines,
-            &current_mode,
-            &(term_size.1 as usize),
-            &(term_size.0 as usize),
-            &current_line,
-            &current_char,
-            &current_scroll,
-            &info_text,
-            &file_name,
-        );
+        macro_rules! draw_menu {
+            () => {
+                match current_mode {
+                    Mode::MenuMode => menu.draw()?,
+                    Mode::ConsoleMode => {
+                        move_to(0, &term_size.1 - 3)?;
+                        menu.draw_header()?;
+                        console.draw();
+                    }
+                    _ => {
+                        menu.draw_header()?;
+                    }
+                }
+            };
+        }
 
-        move_to(0, 0)?;
-
-        match current_mode {
-            Mode::MenuMode => menu.draw()?,
-            Mode::ConsoleMode => {
-                move_to(0, &term_size.1 - 3)?;
-                menu.draw_header()?;
-                console.draw();
+        match changed_line {
+            ChangedLineType::All => {
+                move_to(0, 0)?;
+                draw_skeleton!();
+                draw_editor(
+                    &lines,
+                    &current_mode,
+                    &(term_size.1 as usize),
+                    &(term_size.0 as usize),
+                    &current_line,
+                    &current_char,
+                    &current_scroll,
+                    &info_text,
+                    &file_name,
+                );
+                draw_menu!();
             }
-            _ => {
-                menu.draw_header()?;
+            ChangedLineType::Skeleton => {
+                move_to(0, 0)?;
+                draw_skeleton!();
             }
+            ChangedLineType::Line(line) => {
+                move_to(0, current_line as u16 + 3)?;
+                draw_single_line(
+                    &current_line,
+                    &current_char,
+                    &lines,
+                    generate_select_char(&current_char, &current_line, &lines, &current_mode),
+                    line as usize,
+                    &(term_size.0 as usize),
+                );
+            }
+            ChangedLineType::Lines(i, j) => {
+                for line in i..j {
+                    move_to(0, line as u16 + 3)?;
+                    // print!("RHIA IS A ALINE");
+                    draw_single_line(
+                        &current_line,
+                        &current_char,
+                        &lines,
+                        generate_select_char(&current_char, &current_line, &lines, &current_mode),
+                        line,
+                        &(term_size.0 as usize),
+                    )
+                }
+                move_to(0, 10)?;
+                print!("I and J: {} {}", current_line, j);
+            }
+            _ => {}
         }
 
         io::stdout().flush()?;
@@ -270,12 +325,21 @@ fn main() -> io::Result<()> {
 fn draw_single_line(
     current_line: &usize,
     current_char: &usize,
-    line: String,
+    lines: &Vec<String>,
     char: StyledContent<char>,
-    written_line: bool,
     i: usize,
     width: &usize,
 ) {
+    let line;
+    let written_line;
+    if i < lines.len() {
+        line = lines[i as usize].clone();
+        written_line = true;
+    } else {
+        line = String::new();
+        written_line = false;
+    }
+
     // strings before and after cursor (char variable)
     let mut start = String::new();
     let mut end = String::new();
@@ -311,7 +375,7 @@ fn draw_single_line(
     }
     print!("{}", on_secondary(&divider).dark_grey());
 
-    if (written_line) {
+    if written_line {
         for value in format(&start) {
             print!("{}", styled_on_secondary(value));
         }
@@ -335,17 +399,12 @@ fn draw_single_line(
     }
 }
 
-fn draw_editor(
+fn generate_select_char(
+    current_char: &usize,
+    current_line: &usize,
     lines: &Vec<String>,
     mode: &Mode,
-    height: &usize,
-    width: &usize,
-    current_line: &usize,
-    current_char: &usize,
-    current_scroll: &usize,
-    info_text: &String,
-    file_name: &String,
-) {
+) -> StyledContent<char> {
     let mut select_char = match *current_char == lines[*current_line].len() {
         true => ' '.on_white().slow_blink(),
         false => lines[*current_line]
@@ -359,6 +418,22 @@ fn draw_editor(
     if matches!(*mode, Mode::EditMode) {
         select_char = select_char.white().on_dark_green();
     }
+
+    return select_char;
+}
+
+fn draw_editor(
+    lines: &Vec<String>,
+    mode: &Mode,
+    height: &usize,
+    width: &usize,
+    current_line: &usize,
+    current_char: &usize,
+    current_scroll: &usize,
+    info_text: &String,
+    file_name: &String,
+) {
+    let select_char = generate_select_char(current_char, current_line, lines, mode);
 
     // print!("\n");
 
@@ -374,25 +449,7 @@ fn draw_editor(
     for i in *current_scroll..editor_height + current_scroll {
         // print!("        ");
 
-        let line;
-        let written_line;
-        if i < lines.len() {
-            line = lines[i as usize].clone();
-            written_line = true;
-        } else {
-            line = String::new();
-            written_line = false;
-        }
-
-        draw_single_line(
-            current_line,
-            current_char,
-            line,
-            select_char,
-            written_line,
-            i,
-            width,
-        );
+        draw_single_line(current_line, current_char, lines, select_char, i, width);
 
         println!("");
     }

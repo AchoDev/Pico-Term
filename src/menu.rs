@@ -7,7 +7,7 @@ use crossterm::{
     style::{Color, Stylize},
 };
 
-use crate::on_main;
+use crate::{on_main, ChangedLineType};
 
 pub struct Menu<'a> {
     menu_item: usize,
@@ -99,14 +99,14 @@ impl<'a> Menu<'a> {
         return Ok(start_pos);
     }
 
-    pub fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<bool> {
-        let mut changed_line = true;
+    pub fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<ChangedLineType> {
+        let mut changed_line = ChangedLineType::None;
         match key_event.code {
             KeyCode::Up => self.move_up(),
             KeyCode::Down => self.move_down(),
             KeyCode::Right => self.move_right(),
             KeyCode::Left => self.move_left(),
-            _ => changed_line = false,
+            _ => changed_line = ChangedLineType::None,
         }
 
         Ok(changed_line)
