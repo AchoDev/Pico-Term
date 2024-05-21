@@ -4,7 +4,7 @@ use crossterm::event::{
     MouseEventKind,
 };
 use crossterm::execute;
-use crossterm::style::Stylize;
+use crossterm::style::{StyledContent, Stylize};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
 use functions::{clear, move_to, purge};
 
@@ -267,7 +267,73 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn draw_single_line(lines: &Vec<String>) {}
+fn draw_single_line(
+    current_line: &usize,
+    current_char: &usize,
+    line: String,
+    char: StyledContent<char>,
+    written_line: bool,
+    i: usize,
+    width: &usize,
+) {
+    // strings before and after cursor (char variable)
+    let mut start = String::new();
+    let mut end = String::new();
+
+    let line_chars: Vec<char> = line.chars().collect();
+
+    if *current_line == i as usize {
+        start = line_chars[0..*current_char].iter().collect();
+        if current_char < &line.len() {
+            end = line_chars[current_char + 1..line_chars.len()]
+                .iter()
+                .collect::<String>();
+        }
+    } else {
+        start = line.clone();
+    }
+
+    let mut line_indicator = String::new();
+    let mut divider = " │ ";
+
+    if written_line {
+        line_indicator.push_str(&str::repeat(" ", 4 - (i + 1).to_string().len()));
+        line_indicator.push_str(&(i + 1).to_string());
+    } else {
+        line_indicator.push_str("    ");
+        divider = "   "
+    }
+
+    if *current_line == i {
+        print!("{}", on_secondary(&line_indicator));
+    } else {
+        print!("{}", on_secondary(&line_indicator).dark_grey());
+    }
+    print!("{}", on_secondary(&divider).dark_grey());
+
+    if (written_line) {
+        for value in format(&start) {
+            print!("{}", styled_on_secondary(value));
+        }
+
+        if *current_line == i {
+            print!("{}", char);
+        }
+
+        for value in format(&end) {
+            print!("{}", styled_on_secondary(value));
+        }
+    }
+
+    print!(
+        "{}",
+        on_secondary(&str::repeat(" ", width - 8 - start.len() - end.len()))
+    );
+
+    if *current_line != i {
+        print!("{}", on_secondary(" "))
+    }
+}
 
 fn draw_editor(
     lines: &Vec<String>,
@@ -280,7 +346,7 @@ fn draw_editor(
     info_text: &String,
     file_name: &String,
 ) {
-    let mut char = match *current_char == lines[*current_line].len() {
+    let mut select_char = match *current_char == lines[*current_line].len() {
         true => ' '.on_white().slow_blink(),
         false => lines[*current_line]
             .chars()
@@ -291,7 +357,7 @@ fn draw_editor(
     };
 
     if matches!(*mode, Mode::EditMode) {
-        char = char.white().on_dark_green();
+        select_char = select_char.white().on_dark_green();
     }
 
     // print!("\n");
@@ -317,60 +383,16 @@ fn draw_editor(
             line = String::new();
             written_line = false;
         }
-        // strings before and after cursor (char variable)
-        let mut start = String::new();
-        let mut end = String::new();
 
-        let line_chars: Vec<char> = line.chars().collect();
-
-        if *current_line == i as usize {
-            start = line_chars[0..*current_char].iter().collect();
-            if current_char < &line.len() {
-                end = line_chars[current_char + 1..line_chars.len()]
-                    .iter()
-                    .collect::<String>();
-            }
-        } else {
-            start = line.clone();
-        }
-
-        let mut line_indicator = String::new();
-        let mut divider = " │ ";
-
-        if written_line {
-            line_indicator.push_str(&str::repeat(" ", 4 - (i + 1).to_string().len()));
-            line_indicator.push_str(&(i + 1).to_string());
-        } else {
-            line_indicator.push_str("    ");
-            divider = "   "
-        }
-
-        if *current_line == i {
-            print!("{}", on_secondary(&line_indicator));
-        } else {
-            print!("{}", on_secondary(&line_indicator).dark_grey());
-        }
-        print!("{}", on_secondary(&divider).dark_grey());
-
-        for value in format(&start) {
-            print!("{}", styled_on_secondary(value));
-        }
-
-        if *current_line == i {
-            print!("{}", char);
-        }
-
-        for value in format(&end) {
-            print!("{}", styled_on_secondary(value));
-        }
-        print!(
-            "{}",
-            on_secondary(&str::repeat(" ", width - 8 - start.len() - end.len()))
+        draw_single_line(
+            current_line,
+            current_char,
+            line,
+            select_char,
+            written_line,
+            i,
+            width,
         );
-
-        if *current_line != i {
-            print!("{}", on_secondary(" "))
-        }
 
         println!("");
     }
