@@ -296,9 +296,8 @@ fn main() -> io::Result<()> {
                 );
             }
             ChangedLineType::Lines(i, j) => {
-                for line in i..j {
+                for line in i..j + 1 {
                     move_to(0, line as u16 + 3)?;
-                    // print!("RHIA IS A ALINE");
                     draw_single_line(
                         &current_line,
                         &current_char,
@@ -308,8 +307,6 @@ fn main() -> io::Result<()> {
                         &(term_size.0 as usize),
                     )
                 }
-                move_to(0, 10)?;
-                print!("I and J: {} {}", current_line, j);
             }
             _ => {}
         }
