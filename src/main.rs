@@ -14,12 +14,14 @@ use std::io::{self, Write};
 
 mod console;
 mod editmode;
+mod format;
 mod functions;
 mod menu;
 mod skeleton;
 mod writemode;
 
 use console::{Console, ConsoleAction};
+use format::format;
 use functions::*;
 use menu::Menu;
 
@@ -265,6 +267,8 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
+fn draw_single_line(lines: &Vec<String>) {}
+
 fn draw_editor(
     lines: &Vec<String>,
     mode: &Mode,
@@ -348,13 +352,17 @@ fn draw_editor(
         }
         print!("{}", on_secondary(&divider).dark_grey());
 
-        print!("{}", on_secondary(&start));
+        for value in format(&start) {
+            print!("{}", styled_on_secondary(value));
+        }
 
         if *current_line == i {
             print!("{}", char);
         }
 
-        print!("{}", on_secondary(&end));
+        for value in format(&end) {
+            print!("{}", styled_on_secondary(value));
+        }
         print!(
             "{}",
             on_secondary(&str::repeat(" ", width - 8 - start.len() - end.len()))

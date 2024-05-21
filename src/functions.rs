@@ -71,6 +71,14 @@ pub fn on_secondary(text: &str) -> StyledContent<&str> {
     });
 }
 
+pub fn styled_on_secondary(text: StyledContent<&str>) -> StyledContent<&str> {
+    return text.on(Color::Rgb {
+        r: 47,
+        g: 47,
+        b: 56,
+    });
+}
+
 pub fn jump_to_editor_point(
     current_line: &mut usize,
     current_scroll: &mut usize,
