@@ -71,10 +71,10 @@ pub fn handle_key_event(
         }
 
         KeyCode::Tab => {
-            *current_char += 1;
+            *current_char += 4;
             changed_line = true;
             if *current_char >= lines[*current_line].len() {
-                lines[*current_line].push('\t');
+                lines[*current_line].push_str("    ");
             } else {
                 lines[*current_line] = lines[*current_line][0..*current_char - 1].to_string()
                     + "    "
