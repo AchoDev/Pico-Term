@@ -90,6 +90,10 @@ pub fn handle_key_event(
                 clear()?;
             }
 
+            'd' => {
+                lines.remove(*current_line);
+            }
+
             'q' => {
                 *current_mode = Mode::WriteMode;
                 clear()?;

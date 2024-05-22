@@ -186,7 +186,7 @@ fn main() -> io::Result<()> {
                         if key_event.modifiers == KeyModifiers::CONTROL {
                             info_text = save_file_as(&lines, &file_name)?;
                             block_event = true;
-                            changed_line = ChangedLineType::Skeleton;
+                            changed_line = ChangedLineType::All;
                         }
                     }
                     _ => {}
