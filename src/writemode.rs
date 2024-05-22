@@ -30,7 +30,8 @@ pub fn handle_key_event(
                 editor_height,
                 lines,
             )? {
-                changed_line = ChangedLineType::Lines(*current_line - 1, *current_line)
+                // changed_line = ChangedLineType::Lines(*current_line - 1, *current_line)
+                changed_line = ChangedLineType::AllLines;
             }
         }
         KeyCode::Up => {
@@ -42,7 +43,8 @@ pub fn handle_key_event(
                 editor_height,
                 lines,
             )? {
-                changed_line = ChangedLineType::Lines(*current_line, *current_line + 1)
+                // changed_line = ChangedLineType::Lines(*current_line, *current_line + 1)
+                changed_line = ChangedLineType::AllLines;
             }
         }
         KeyCode::Right => {
@@ -79,7 +81,8 @@ pub fn handle_key_event(
                 lines.remove(0);
                 *current_line -= 1;
             } else {
-                changed_line = ChangedLineType::Lines(*current_line - 1, lines.len() - 1);
+                // changed_line = ChangedLineType::Lines(*current_line - 1, lines.len() - 1);
+                changed_line = ChangedLineType::AllLines;
             }
         }
 
@@ -100,7 +103,8 @@ pub fn handle_key_event(
             *info_text = String::new();
             clear()?;
             *current_char += 1;
-            changed_line = ChangedLineType::Line(*current_line);
+            // changed_line = ChangedLineType::Line(*current_line);
+            changed_line = ChangedLineType::AllLines;
             if *current_char >= lines[*current_line].len() {
                 lines[*current_line].push(c);
             } else {
@@ -131,7 +135,8 @@ pub fn handle_key_event(
                     + &lines[*current_line][*current_char..lines[*current_line].len()]
             }
             *current_char -= 1;
-            changed_line = ChangedLineType::Line(*current_line);
+            // changed_line = ChangedLineType::Line(*current_line);
+            changed_line = ChangedLineType::AllLines;
             jump_to_editor_point(current_line, current_scroll, editor_height);
             clear()?;
             // execute!(
