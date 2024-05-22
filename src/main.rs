@@ -46,6 +46,7 @@ fn main() -> io::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     let mut lines: Vec<String>;
+    let mut cached_lines: Vec<Vec<StyledContent<&str>>>;
     let mut file_name: String;
     let file_path: String;
     let mut info_text = String::new();
@@ -289,25 +290,29 @@ fn main() -> io::Result<()> {
             }
             ChangedLineType::Line(line) => {
                 move_to(0, current_line as u16 + 3)?;
+                let editor_height = &(term_size.0 as usize);
+                jump_to_editor_point(&mut current_line, &mut current_scroll, editor_height);
                 draw_single_line(
                     &current_line,
                     &current_char,
                     &lines,
                     generate_select_char(&current_char, &current_line, &lines, &current_mode),
                     line as usize,
-                    &(term_size.0 as usize),
+                    editor_height,
                 );
             }
             ChangedLineType::Lines(i, j) => {
                 for line in i..j + 1 {
                     move_to(0, line as u16 + 3)?;
+                    let editor_height = &(term_size.0 as usize);
+                    jump_to_editor_point(&mut current_line, &mut current_scroll, editor_height);
                     draw_single_line(
                         &current_line,
                         &current_char,
                         &lines,
                         generate_select_char(&current_char, &current_line, &lines, &current_mode),
                         line,
-                        &(term_size.0 as usize),
+                        editor_height,
                     )
                 }
             }
