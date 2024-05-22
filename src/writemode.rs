@@ -31,7 +31,7 @@ pub fn handle_key_event(
                 lines,
             )? {
                 // changed_line = ChangedLineType::Lines(*current_line - 1, *current_line)
-                changed_line = ChangedLineType::AllLines;
+                changed_line = ChangedLineType::All;
             }
         }
         KeyCode::Up => {
@@ -44,20 +44,22 @@ pub fn handle_key_event(
                 lines,
             )? {
                 // changed_line = ChangedLineType::Lines(*current_line, *current_line + 1)
-                changed_line = ChangedLineType::AllLines;
+                changed_line = ChangedLineType::All;
             }
         }
         KeyCode::Right => {
             *info_text = String::new();
             if move_right(current_char, current_line, lines, false)? {
-                changed_line = ChangedLineType::Line(*current_line);
+                // changed_line = ChangedLineType::Line(*current_line);
+                changed_line = ChangedLineType::All;
             }
         }
         KeyCode::Left => {
             *info_text = String::new();
 
             if move_left(current_char, current_line, lines, false)? {
-                changed_line = ChangedLineType::Line(*current_line);
+                // changed_line = ChangedLineType::Line(*current_line);
+                changed_line = ChangedLineType::All;
             }
         }
         KeyCode::Enter => {
@@ -88,7 +90,8 @@ pub fn handle_key_event(
 
         KeyCode::Tab => {
             *current_char += 4;
-            changed_line = ChangedLineType::Line(*current_line);
+            // changed_line = ChangedLineType::Line(*current_line);
+            changed_line = ChangedLineType::All;
             if *current_char >= lines[*current_line].len() {
                 lines[*current_line].push_str("    ");
             } else {
@@ -105,6 +108,7 @@ pub fn handle_key_event(
             *current_char += 1;
             // changed_line = ChangedLineType::Line(*current_line);
             changed_line = ChangedLineType::All;
+            jump_to_editor_point(current_line, current_scroll, editor_height);
             if *current_char >= lines[*current_line].len() {
                 lines[*current_line].push(c);
             } else {
