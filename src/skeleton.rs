@@ -10,6 +10,7 @@ pub fn draw_skeleton(
     current_mode: &Mode,
     current_line: &usize,
     current_char: &usize,
+    current_scroll: &usize,
 ) -> io::Result<()> {
     for y in 0..height - 1 {
         let string = str::repeat(" ", *width);
@@ -19,7 +20,7 @@ pub fn draw_skeleton(
     let mode_status: StyledContent<&str>;
     let help_text: &str;
     let mut spacer_len = width.clone();
-    let line_info = generate_line_info(current_line, current_char);
+    let line_info = generate_line_info(current_line, current_char, current_scroll);
 
     match current_mode {
         Mode::WriteMode => {
@@ -57,9 +58,17 @@ pub fn draw_skeleton(
     Ok(())
 }
 
-fn generate_line_info(current_line: &usize, current_char: &usize) -> String {
+fn generate_line_info(
+    current_line: &usize,
+    current_char: &usize,
+    current_scroll: &usize,
+) -> String {
     let mut line_info = String::new();
-    line_info.push_str("Ln: ");
+
+    line_info.push_str("Sc: ");
+    line_info.push_str(&current_scroll.to_string());
+
+    line_info.push_str(" Ln: ");
     line_info.push_str(&current_line.to_string());
     line_info.push_str(" Ch: ");
     line_info.push_str(&current_char.to_string());

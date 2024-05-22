@@ -132,15 +132,17 @@ fn main() -> io::Result<()> {
                         if current_scroll + calculate_editor_height(&(term_size.1 as usize))
                             < lines.len()
                         {
-                            current_scroll += 1;
-                            changed_line = ChangedLineType::AllLines;
+                            current_scroll += 2;
+                            changed_line = ChangedLineType::All;
                             clear()?;
                         }
                     }
                     MouseEventKind::ScrollUp => {
-                        if current_scroll > 0 {
-                            current_scroll -= 1;
-                            changed_line = ChangedLineType::AllLines;
+                        if current_scroll == 0 {
+                            changed_line = ChangedLineType::None;
+                        } else {
+                            current_scroll = std::cmp::max(0, current_scroll as i32 - 2) as usize;
+                            changed_line = ChangedLineType::All;
                             clear()?;
                         }
                     }
@@ -246,6 +248,7 @@ fn main() -> io::Result<()> {
                     &current_mode,
                     &current_line,
                     &current_char,
+                    &current_scroll,
                 )?;
             };
         }
@@ -292,7 +295,8 @@ fn main() -> io::Result<()> {
             }
             ChangedLineType::Line(line) => {
                 move_to(0, current_line as u16 + 3)?;
-                let editor_height = &(term_size.0 as usize);
+                let editor_height = &(term_size.1 as usize);
+                let editor_width = &(term_size.0 as usize);
                 jump_to_editor_point(&mut current_line, &mut current_scroll, editor_height);
                 draw_single_line(
                     &current_line,
@@ -301,13 +305,14 @@ fn main() -> io::Result<()> {
                     &mut cached_lines,
                     generate_select_char(&current_char, &current_line, &lines, &current_mode),
                     line as usize,
-                    editor_height,
+                    editor_width,
                 );
             }
             ChangedLineType::Lines(i, j) => {
                 for line in i..j + 1 {
                     move_to(0, line as u16 + 3)?;
-                    let editor_height = &(term_size.0 as usize);
+                    let editor_height = &(term_size.1 as usize);
+                    let editor_width = &(term_size.0 as usize);
                     jump_to_editor_point(&mut current_line, &mut current_scroll, editor_height);
                     draw_single_line(
                         &current_line,
@@ -316,22 +321,26 @@ fn main() -> io::Result<()> {
                         &cached_lines,
                         generate_select_char(&current_char, &current_line, &lines, &current_mode),
                         line,
-                        editor_height,
+                        editor_width,
                     )
                 }
             }
-            ChangedLineType::AllLines => draw_editor(
-                &lines,
-                &mut cached_lines,
-                &current_mode,
-                &(term_size.1 as usize),
-                &(term_size.0 as usize),
-                &current_line,
-                &current_char,
-                &current_scroll,
-                &info_text,
-                &file_name,
-            ),
+            ChangedLineType::AllLines => {
+                let editor_height = &(term_size.1 as usize);
+                jump_to_editor_point(&mut current_line, &mut current_scroll, editor_height);
+                draw_editor(
+                    &lines,
+                    &mut cached_lines,
+                    &current_mode,
+                    editor_height,
+                    &(term_size.0 as usize),
+                    &current_line,
+                    &current_char,
+                    &current_scroll,
+                    &info_text,
+                    &file_name,
+                )
+            }
             _ => {}
         }
 

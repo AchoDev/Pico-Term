@@ -104,7 +104,7 @@ pub fn handle_key_event(
             clear()?;
             *current_char += 1;
             // changed_line = ChangedLineType::Line(*current_line);
-            changed_line = ChangedLineType::AllLines;
+            changed_line = ChangedLineType::All;
             if *current_char >= lines[*current_line].len() {
                 lines[*current_line].push(c);
             } else {
