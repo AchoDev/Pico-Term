@@ -71,7 +71,7 @@ pub fn on_secondary(text: &str) -> StyledContent<&str> {
     });
 }
 
-pub fn styled_on_secondary(text: StyledContent<&str>) -> StyledContent<&str> {
+pub fn styled_on_secondary(text: StyledContent<String>) -> StyledContent<String> {
     return text.on(Color::Rgb {
         r: 47,
         g: 47,

@@ -1,7 +1,7 @@
 use crossterm::style::{Color, StyledContent, Stylize};
 use regex::{Match, Regex};
 
-pub fn format(line: &str) -> Vec<StyledContent<&str>> {
+pub fn format(line: &str) -> Vec<StyledContent<String>> {
     let atom_one = ColorScheme {
         keywords: (180, 105, 184),
     };
@@ -15,16 +15,16 @@ pub fn format(line: &str) -> Vec<StyledContent<&str>> {
     }
 
     let mut current_index = 0;
-    let mut result: Vec<StyledContent<&str>> = Vec::new();
+    let mut result: Vec<StyledContent<String>> = Vec::new();
     for i in 0..captures.len() {
         let start = captures[i].start();
         let end = captures[i].end();
 
         if current_index != start {
-            result.push(line[current_index..start].white());
+            result.push(line[current_index..start].to_string().white());
         }
 
-        result.push(line[start..end].with(Color::Rgb {
+        result.push(line[start..end].to_string().with(Color::Rgb {
             r: atom_one.keywords.0,
             g: atom_one.keywords.1,
             b: atom_one.keywords.2,
@@ -33,7 +33,7 @@ pub fn format(line: &str) -> Vec<StyledContent<&str>> {
         current_index = end;
     }
 
-    result.push(line[current_index..line.len()].white());
+    result.push(line[current_index..line.len()].to_string().white());
 
     return result;
 }

@@ -17,17 +17,17 @@ var full_name = name + "Smith"
 log full_name
 
 struct Person {
-	var name
-	var height
+    var name
+    var height
 
-	static func getStandardPerson() {
+    static func getStandardPerson() {
         
-		return Person("Peter", 74)
-	}
+        return Person("Peter", 74)
+    }
 
-	func sayHello() {
-		log "Hello, my name is " + name
-	}
+    func sayHello() {
+	    log "Hello, my name is " + name
+    }
 }
 
 var person = Person("Joe", 74)

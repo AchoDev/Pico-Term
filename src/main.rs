@@ -38,6 +38,7 @@ pub enum ChangedLineType {
     Skeleton,
     Line(usize),
     Lines(usize, usize),
+    AllLines,
 }
 
 fn main() -> io::Result<()> {
@@ -46,7 +47,7 @@ fn main() -> io::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     let mut lines: Vec<String>;
-    let mut cached_lines: Vec<Vec<StyledContent<&str>>>;
+    let mut cached_lines: Vec<Vec<StyledContent<String>>> = Vec::new();
     let mut file_name: String;
     let file_path: String;
     let mut info_text = String::new();
@@ -132,14 +133,14 @@ fn main() -> io::Result<()> {
                             < lines.len()
                         {
                             current_scroll += 1;
-                            changed_line = ChangedLineType::All;
+                            changed_line = ChangedLineType::AllLines;
                             clear()?;
                         }
                     }
                     MouseEventKind::ScrollUp => {
                         if current_scroll > 0 {
                             current_scroll -= 1;
-                            changed_line = ChangedLineType::All;
+                            changed_line = ChangedLineType::AllLines;
                             clear()?;
                         }
                     }
@@ -272,6 +273,7 @@ fn main() -> io::Result<()> {
                 move_to(0, 0)?;
                 draw_editor(
                     &lines,
+                    &mut cached_lines,
                     &current_mode,
                     &(term_size.1 as usize),
                     &(term_size.0 as usize),
@@ -296,6 +298,7 @@ fn main() -> io::Result<()> {
                     &current_line,
                     &current_char,
                     &lines,
+                    &mut cached_lines,
                     generate_select_char(&current_char, &current_line, &lines, &current_mode),
                     line as usize,
                     editor_height,
@@ -310,12 +313,25 @@ fn main() -> io::Result<()> {
                         &current_line,
                         &current_char,
                         &lines,
+                        &cached_lines,
                         generate_select_char(&current_char, &current_line, &lines, &current_mode),
                         line,
                         editor_height,
                     )
                 }
             }
+            ChangedLineType::AllLines => draw_editor(
+                &lines,
+                &mut cached_lines,
+                &current_mode,
+                &(term_size.1 as usize),
+                &(term_size.0 as usize),
+                &current_line,
+                &current_char,
+                &current_scroll,
+                &info_text,
+                &file_name,
+            ),
             _ => {}
         }
 
@@ -331,6 +347,7 @@ fn draw_single_line(
     current_line: &usize,
     current_char: &usize,
     lines: &Vec<String>,
+    cached_lines: &Vec<Vec<StyledContent<String>>>,
     char: StyledContent<char>,
     i: usize,
     width: &usize,
@@ -381,17 +398,20 @@ fn draw_single_line(
     print!("{}", on_secondary(&divider).dark_grey());
 
     if written_line {
-        for value in format(&start) {
-            print!("{}", styled_on_secondary(value));
-        }
+        // for value in format(&start) {
+        //     print!("{}", styled_on_secondary(value));
+        // }
+
+        print!("{}", on_secondary(&start));
 
         if *current_line == i {
             print!("{}", char);
         }
 
-        for value in format(&end) {
-            print!("{}", styled_on_secondary(value));
-        }
+        print!("{}", on_secondary(&end));
+        // for value in format(&end) {
+        //     print!("{}", styled_on_secondary(value));
+        // }
     }
 
     print!(
@@ -427,8 +447,16 @@ fn generate_select_char(
     return select_char;
 }
 
+fn format_all_lines(lines: &Vec<String>, cached_lines: &mut Vec<Vec<StyledContent<String>>>) {
+    *cached_lines = Vec::new();
+    for line in lines {
+        cached_lines.push(format(line));
+    }
+}
+
 fn draw_editor(
     lines: &Vec<String>,
+    cached_lines: &mut Vec<Vec<StyledContent<String>>>,
     mode: &Mode,
     height: &usize,
     width: &usize,
@@ -454,7 +482,15 @@ fn draw_editor(
     for i in *current_scroll..editor_height + current_scroll {
         // print!("        ");
 
-        draw_single_line(current_line, current_char, lines, select_char, i, width);
+        draw_single_line(
+            current_line,
+            current_char,
+            lines,
+            cached_lines,
+            select_char,
+            i,
+            width,
+        );
 
         println!("");
     }
