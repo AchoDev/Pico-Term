@@ -504,3 +504,9 @@ fn draw_editor(
         println!("");
     }
 }
+
+fn draw_help_window(width: &usize, height: &usize) {
+    print!("{}", on_secondary("Welcome to Pico-Term!"));
+    print!("{}", "Open a new File with STR + N");
+    print!("{}", "See all shortcuts up at Settings");
+}
