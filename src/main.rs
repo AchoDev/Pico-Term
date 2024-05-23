@@ -69,7 +69,11 @@ fn main() -> io::Result<()> {
         file_path = env::current_dir().unwrap().display().to_string() + "/new_file.txt";
     }
 
+    // print!("{:?}", lines);
+
     clear()?;
+
+    // return Ok(());
 
     let mut current_line: usize = 0;
     let mut current_char: usize = 0;
@@ -225,6 +229,7 @@ fn main() -> io::Result<()> {
                             lines = vec![String::from("")];
                             current_line = 0;
                             current_char = 0;
+                            current_scroll = 0;
                             changed_line = ChangedLineType::All;
                         }
                     }
@@ -238,6 +243,9 @@ fn main() -> io::Result<()> {
 
                             let file = read_to_string(&file_path)?;
                             lines = file.lines().map(|s| s.to_string()).collect();
+                            current_line = 0;
+                            current_char = 0;
+                            current_scroll = 0;
 
                             changed_line = ChangedLineType::All;
                         }

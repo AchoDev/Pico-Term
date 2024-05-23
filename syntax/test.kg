@@ -43,33 +43,33 @@ prompt "what's your name? " -> input_name
 
 // loop 5 times
 loop 5 {
-	log input_name
+    log input_name
 }
 
 // loop until condition is met
 loop input_name != "Joe" {
-	log input_name
+    log input_name
 }
 
 // classic loop
 loop var i = 0, i < 10, i++ {
-	log i
+    log i
 }
 
 
 if input_name == "Joe" {
-	log "Hello Joe"
+    log "Hello Joe"
 } elseif input_name == "Bob" {
-	log "Hello Bob"
+    log "Hello Bob"
 } else {
-	log "Hello stranger"
+    log "Hello stranger"
 }
 
 
 var array2 = input_name.split()
 
 func test_function(name) {
-	log "Hello " + name
+    log "Hello " + name
 }
 
 // create reference with &
@@ -83,7 +83,7 @@ log @ref
 // will log "Hi"
 
 func change_val(val) {
-	val = "THIS NOW CHANGED"
+    val = "THIS NOW CHANGED"
 }
 
 change_val(val1)

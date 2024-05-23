@@ -89,7 +89,7 @@ pub fn handle_key_event(
         }
 
         KeyCode::Tab => {
-            *current_char += 4;
+            *current_char += 1;
             // changed_line = ChangedLineType::Line(*current_line);
             changed_line = ChangedLineType::All;
             if *current_char >= lines[*current_line].len() {
@@ -99,6 +99,9 @@ pub fn handle_key_event(
                     + "    "
                     + &lines[*current_line][*current_char - 1..lines[*current_line].len()]
             }
+
+            *current_char += 3;
+
             clear()?;
         }
 
