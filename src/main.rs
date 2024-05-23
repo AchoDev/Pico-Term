@@ -156,6 +156,31 @@ fn main() -> io::Result<()> {
                     //     changed_line = true;
                     //     clear()?;
                     // }
+                    MouseEventKind::Down(MouseButton::Left) => {
+                        // lines[0] = String::from("click x: ") + &mouse_event.column.to_string();
+                        // lines[1] = String::from("click y: ") + &mouse_event.row.to_string();
+
+                        if mouse_event.column < 7 {
+                            continue;
+                        }
+
+                        if mouse_event.row < 3 {
+                            continue;
+                        }
+
+                        current_line = mouse_event.row as usize + current_scroll - 3;
+                        current_char = mouse_event.column as usize - 7;
+
+                        if current_line > lines.len() {
+                            current_line = lines.len();
+                        }
+
+                        if current_char > lines[current_line].len() {
+                            current_char = lines[current_line].len();
+                        }
+
+                        changed_line = ChangedLineType::All;
+                    }
                     _ => {}
                 }
             }
