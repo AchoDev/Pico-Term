@@ -7,6 +7,7 @@ use crossterm::execute;
 use crossterm::style::{StyledContent, Stylize};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
 use functions::{clear, move_to, purge};
+use terminal_link::Link;
 
 use std::env;
 use std::fs::read_to_string;
@@ -49,7 +50,7 @@ fn main() -> io::Result<()> {
     let mut lines: Vec<String>;
     let mut cached_lines: Vec<Vec<StyledContent<String>>> = Vec::new();
     let mut file_name: String;
-    let file_path: String;
+    let mut file_path: String;
     let mut info_text = String::new();
 
     // println!(
@@ -100,7 +101,10 @@ fn main() -> io::Result<()> {
         if matches!(current_mode, Mode::ConsoleMode) {
             if let Ok(event) = read() {
                 if let Event::Key(key_event) = event {
-                    if key_event.kind != KeyEventKind::Press && !initial {
+                    if (key_event.kind != KeyEventKind::Press
+                        || key_event.kind != KeyEventKind::Repeat)
+                        && !initial
+                    {
                         continue;
                     }
                     match key_event.code {
@@ -186,6 +190,27 @@ fn main() -> io::Result<()> {
                         if key_event.modifiers == KeyModifiers::CONTROL {
                             info_text = save_file_as(&lines, &file_name)?;
                             block_event = true;
+                            changed_line = ChangedLineType::All;
+                        }
+                    }
+                    KeyCode::Char('n') => {
+                        if key_event.modifiers == KeyModifiers::CONTROL {
+                            block_event = true;
+                            file_name = String::from("new_file.txt");
+                            changed_line = ChangedLineType::All;
+                        }
+                    }
+                    KeyCode::Char('o') => {
+                        if key_event.modifiers == KeyModifiers::CONTROL {
+                            block_event = true;
+                            let file = rfd::FileDialog::new().set_directory(&file_path).pick_file();
+
+                            file_path = file.unwrap().into_os_string().into_string().unwrap();
+                            file_name = file_path.split(r"\").last().unwrap().to_string();
+
+                            let file = read_to_string(&file_path)?;
+                            lines = file.lines().map(|s| s.to_string()).collect();
+
                             changed_line = ChangedLineType::All;
                         }
                     }
@@ -518,15 +543,23 @@ fn draw_help_window(width: &usize, height: &usize) {
     for _ in 0..calculate_editor_height(height) + 1 {
         print!("{}\n", on_secondary(&str::repeat(" ", *width)));
     }
+
+    if *height < 10 {
+        return;
+    }
+
     draw_in_center(
         width,
         height,
         Vec::from([
             "Welcome to Pico-Term!",
             "Open a new File with STR + N",
-            "See all shortcuts up at Settings",
+            "See all shortcuts ",
         ]),
     );
+
+    let website_link = Link::new("here", "https://achodev.me/pico-term");
+    print!("{}", website_link);
 }
 
 fn draw_in_center(width: &usize, height: &usize, text: Vec<&str>) {
