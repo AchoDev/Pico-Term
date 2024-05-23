@@ -92,6 +92,7 @@ pub fn handle_key_event(
 
             'd' => {
                 lines.remove(*current_line);
+                *current_char = 0;
             }
 
             'q' => {

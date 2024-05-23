@@ -106,11 +106,11 @@ pub fn move_down(
 
     *current_line += 1;
 
-    jump_to_editor_point(current_line, current_scroll, editor_height);
-
     if *current_char >= lines[*current_line].len() {
         *current_char = lines[*current_line].len()
     }
+
+    jump_to_editor_point(current_line, current_scroll, editor_height);
     clear()?;
     Ok(true)
 }
@@ -173,7 +173,7 @@ pub fn move_right(
 pub fn move_left(
     current_char: &mut usize,
     current_line: &usize,
-    lines: &mut Vec<String>,
+    lines: &Vec<String>,
     whole_word: bool,
 ) -> io::Result<bool> {
     if *current_char == 0 {

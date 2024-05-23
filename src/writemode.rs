@@ -1,6 +1,6 @@
 use std::io;
 
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::{
     functions::clear, jump_to_editor_point, move_down, move_left, move_right, move_up,
@@ -131,6 +131,9 @@ pub fn handle_key_event(
                 *current_line -= 1;
                 *current_char = lines[*current_line].len() - copied_line.len();
                 *current_char += 1;
+            } else if key_event.modifiers == KeyModifiers::CONTROL {
+                // lines[*current_line] += "test";
+                // cannot add this as long as crossterm doesn't fix backspace + keymod issue
             } else if *current_char >= lines[*current_line].len() {
                 lines[*current_line].pop();
                 // clear_all()?;

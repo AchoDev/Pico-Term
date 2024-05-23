@@ -197,6 +197,9 @@ fn main() -> io::Result<()> {
                         if key_event.modifiers == KeyModifiers::CONTROL {
                             block_event = true;
                             file_name = String::from("new_file.txt");
+                            lines = vec![String::from("")];
+                            current_line = 0;
+                            current_char = 0;
                             changed_line = ChangedLineType::All;
                         }
                     }
@@ -220,6 +223,7 @@ fn main() -> io::Result<()> {
                 if key_event.code == KeyCode::Esc {}
 
                 if !block_event {
+                    let editor_height = &calculate_editor_height(&(term_size.1 as usize));
                     match current_mode {
                         Mode::ConsoleMode => {}
                         Mode::MenuMode => changed_line = menu.handle_key_event(key_event)?,
@@ -230,7 +234,7 @@ fn main() -> io::Result<()> {
                                 &mut current_line,
                                 &mut current_char,
                                 &mut current_scroll,
-                                &calculate_editor_height(&(term_size.1 as usize)),
+                                editor_height,
                                 &mut lines,
                                 initial,
                             )?;
@@ -241,7 +245,7 @@ fn main() -> io::Result<()> {
                                 &mut current_line,
                                 &mut current_char,
                                 &mut current_scroll,
-                                &(term_size.1 as usize),
+                                editor_height,
                                 &mut current_mode,
                                 &mut lines,
                             )?
