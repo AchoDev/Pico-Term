@@ -164,6 +164,10 @@ fn main() -> io::Result<()> {
                         // lines[0] = String::from("click x: ") + &mouse_event.column.to_string();
                         // lines[1] = String::from("click y: ") + &mouse_event.row.to_string();
 
+                        if file_name == "" {
+                            continue;
+                        }
+
                         if mouse_event.column < 7 {
                             continue;
                         }
