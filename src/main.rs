@@ -307,6 +307,7 @@ fn main() -> io::Result<()> {
                 skeleton::draw_skeleton(
                     &(term_size.0 as usize),
                     &(term_size.1 as usize),
+                    &info_text,
                     &current_mode,
                     &current_line,
                     &current_char,

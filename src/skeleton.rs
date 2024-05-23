@@ -7,6 +7,7 @@ use crate::{functions::move_to, on_main, Mode};
 pub fn draw_skeleton(
     width: &usize,
     height: &usize,
+    info_text: &str,
     current_mode: &Mode,
     current_line: &usize,
     current_char: &usize,
@@ -45,11 +46,14 @@ pub fn draw_skeleton(
     print!("{}", mode_status);
     print!("{}", on_main(" "));
     print!("{}", on_main(help_text).dark_grey());
+    print!("{}", on_main(" "));
+    print!("{}", info_text.on_grey());
+
     print!(
         "{}",
         on_main(&str::repeat(
             " ",
-            spacer_len - help_text.len() - line_info.len() - 1 + 4
+            spacer_len - help_text.len() - line_info.len() - 1 + 4 - info_text.len() - 1
         ))
     );
 
