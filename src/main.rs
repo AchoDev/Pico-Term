@@ -64,7 +64,7 @@ fn main() -> io::Result<()> {
         file_name = args[1].clone();
     } else {
         lines = vec!["".to_string()];
-        file_name = String::from("new_file.txt");
+        file_name = String::from("");
         file_path = env::current_dir().unwrap().display().to_string() + "/new_file.txt";
     }
 
@@ -480,6 +480,11 @@ fn draw_editor(
     // print!("\n");
 
     print!("\n");
+    if file_name == "" {
+        draw_help_window(width, height);
+        return;
+    }
+
     print!("{}", on_secondary(" "));
     print!("{}", on_secondary(file_name));
     print!("{}", on_secondary("  "));
@@ -506,7 +511,29 @@ fn draw_editor(
 }
 
 fn draw_help_window(width: &usize, height: &usize) {
-    print!("{}", on_secondary("Welcome to Pico-Term!"));
-    print!("{}", "Open a new File with STR + N");
-    print!("{}", "See all shortcuts up at Settings");
+    print!("{}", on_secondary(" "));
+    print!("{}", on_secondary("Start"));
+    print!("{}", on_secondary("  "));
+    print!("\n");
+    for _ in 0..calculate_editor_height(height) + 1 {
+        print!("{}\n", on_secondary(&str::repeat(" ", *width)));
+    }
+    draw_in_center(
+        width,
+        height,
+        Vec::from([
+            "Welcome to Pico-Term!",
+            "Open a new File with STR + N",
+            "See all shortcuts up at Settings",
+        ]),
+    );
+}
+
+fn draw_in_center(width: &usize, height: &usize, text: Vec<&str>) {
+    let mut i = (height / 2 - text.len() / 2) as u16;
+    for line in text {
+        move_to((width / 2 - line.len() / 2) as u16, i).unwrap();
+        print!("{}", on_secondary(line));
+        i += 1;
+    }
 }
